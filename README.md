@@ -1,2 +1,4 @@
-# discord-interchannel-message-mover
+# interchannel message mover
 a simple discord bot to move messages between channels
+
+*wip as in hang in tight!*
