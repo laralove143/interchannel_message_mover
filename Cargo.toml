@@ -19,6 +19,7 @@ twilight-http = { version = "0.8", default-features = false, features = [
     "trust-dns",
 ] }
 twilight-model = "0.8"
+twilight-cache-inmemory = "0.8"
 twilight-util = { version = "0.8", features = ["builder"] }
 twilight-interactions = "0.8"
 anyhow = "1.0"
