@@ -1,0 +1,24 @@
+[package]
+name = "discord-interchannel-message-mover"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.13", features = ["macros", "rt-multi-thread"] }
+futures = { version = "0.3", default-features = false }
+twilight-gateway = { version = "0.8", default-features = false, features = [
+    "simd-json",
+    "rustls",
+    "zlib-simd",
+] }
+twilight-http = { version = "0.8", default-features = false, features = [
+    "decompression",
+    "simd-json",
+    "rustls",
+    "trust-dns",
+] }
+twilight-model = "0.8"
+twilight-util = { version = "0.8", features = ["builder"] }
+twilight-interactions = "0.8"
+anyhow = "1.0"
