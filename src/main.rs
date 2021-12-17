@@ -19,8 +19,12 @@ pub struct ContextValue {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let intents = Intents::empty();
-    let event_types = EventTypeFlags::INTERACTION_CREATE;
+    let intents = Intents::GUILD_MESSAGES;
+    let event_types = EventTypeFlags::INTERACTION_CREATE
+        | EventTypeFlags::MESSAGE_CREATE
+        | EventTypeFlags::MESSAGE_UPDATE
+        | EventTypeFlags::MESSAGE_DELETE
+        | EventTypeFlags::MESSAGE_DELETE_BULK;
     let resource_types = ResourceType::MESSAGE;
 
     let token = env::var("TEST_BOT_TOKEN")?;
@@ -52,6 +56,7 @@ async fn main() -> Result<()> {
     let ctx = Arc::new(ContextValue { http, cache });
 
     while let Some((_, event)) = events.next().await {
+        ctx.cache.update(&event);
         tokio::spawn(events::handle(ctx.clone(), event));
     }
 
