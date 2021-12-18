@@ -1,11 +1,12 @@
+mod cache;
 mod commands;
 mod events;
 
 use std::{env, num::NonZeroU64, str::FromStr, sync::Arc};
 
 use anyhow::Result;
+use cache::Cache;
 use futures::StreamExt;
-use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
 use twilight_model::id::GuildId;
@@ -14,7 +15,7 @@ type Context = Arc<ContextValue>;
 
 pub struct ContextValue {
     http: Client,
-    cache: InMemoryCache,
+    cache: Cache,
 }
 
 #[tokio::main]
@@ -25,7 +26,6 @@ async fn main() -> Result<()> {
         | EventTypeFlags::MESSAGE_UPDATE
         | EventTypeFlags::MESSAGE_DELETE
         | EventTypeFlags::MESSAGE_DELETE_BULK;
-    let resource_types = ResourceType::MESSAGE;
 
     let token = env::var("TEST_BOT_TOKEN")?;
     let guild_id = GuildId(NonZeroU64::from_str(&env::var("GUILD_ID")?)?);
@@ -48,15 +48,12 @@ async fn main() -> Result<()> {
     );
     commands::create(&http, guild_id).await?;
 
-    let cache = InMemoryCache::builder()
-        .resource_types(resource_types)
-        .message_cache_size(20)
-        .build();
-
-    let ctx = Arc::new(ContextValue { http, cache });
+    let ctx = Arc::new(ContextValue {
+        http,
+        cache: Cache::new(),
+    });
 
     while let Some((_, event)) = events.next().await {
-        ctx.cache.update(&event);
         tokio::spawn(events::handle(ctx.clone(), event));
     }
 
