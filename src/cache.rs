@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use dashmap::DashMap;
 use twilight_model::{
     channel::{embed::Embed, Message},
@@ -5,7 +7,7 @@ use twilight_model::{
 };
 
 pub struct Cache {
-    messages: DashMap<ChannelId, Vec<CachedMessage>>,
+    messages: DashMap<ChannelId, VecDeque<CachedMessage>>,
     webhooks: DashMap<ChannelId, CachedWebhook>,
 }
 
@@ -19,14 +21,17 @@ impl Cache {
 
     pub fn add_message(&self, message: Message) {
         let channel_id = message.channel_id;
-        self.messages
-            .get_mut(&channel_id)
-            .unwrap_or_else(|| {
-                self.messages.insert(channel_id, Vec::new());
-                self.messages.get_mut(&channel_id).unwrap()
-            })
-            .value_mut()
-            .push(message.into());
+
+        let mut messages = self.messages.get_mut(&channel_id).unwrap_or_else(|| {
+            self.messages
+                .insert(channel_id, VecDeque::with_capacity(20));
+            self.messages.get_mut(&channel_id).unwrap()
+        });
+
+        if messages.len() == 20 {
+            messages.pop_front();
+        }
+        messages.push_back(message.into());
     }
 }
 
