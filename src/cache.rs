@@ -3,7 +3,8 @@ use std::collections::VecDeque;
 use dashmap::DashMap;
 use twilight_model::{
     channel::{embed::Embed, Message},
-    id::{ChannelId, WebhookId},
+    gateway::payload::incoming::MessageUpdate,
+    id::{ChannelId, MessageId, WebhookId},
 };
 
 pub struct Cache {
@@ -33,22 +34,60 @@ impl Cache {
         }
         messages.push_back(message.into());
     }
+
+    pub fn update_message(&self, message: MessageUpdate) {
+        self._update_message(message);
+    }
+
+    fn _update_message(&self, message: MessageUpdate) -> Option<()> {
+        let mut messages = self.messages.get_mut(&message.channel_id)?;
+
+        for cached_message in messages.value_mut() {
+            if cached_message.id == message.id {
+                if !message.attachments.map_or(true, |v| v.is_empty()) {
+                    cached_message.content = MessageContent::AttachmentsOrComponents;
+                } else if let MessageContent::Valid { content, embeds } =
+                    &mut cached_message.content
+                {
+                    if let Some(updated_content) = message.content {
+                        *content = updated_content;
+                    }
+                    if let Some(updated_embeds) = message.embeds {
+                        *embeds = updated_embeds;
+                    }
+                }
+                return None;
+            }
+        }
+
+        None
+    }
 }
 
-enum CachedMessage {
+#[derive(Debug)]
+struct CachedMessage {
+    id: MessageId,
+    content: MessageContent,
+}
+
+#[derive(Debug)]
+enum MessageContent {
     Valid { content: String, embeds: Vec<Embed> },
-    HasAttachmentsOrComponents,
+    AttachmentsOrComponents,
 }
 
 impl From<Message> for CachedMessage {
     fn from(message: Message) -> Self {
-        if message.attachments.is_empty() && message.components.is_empty() {
-            Self::Valid {
-                content: message.content,
-                embeds: message.embeds,
-            }
-        } else {
-            Self::HasAttachmentsOrComponents
+        Self {
+            id: message.id,
+            content: if message.attachments.is_empty() && message.components.is_empty() {
+                MessageContent::Valid {
+                    content: message.content,
+                    embeds: message.embeds,
+                }
+            } else {
+                MessageContent::AttachmentsOrComponents
+            },
         }
     }
 }
