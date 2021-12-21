@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use dashmap::DashMap;
 use twilight_model::{
     channel::{embed::Embed, Message},
-    gateway::payload::incoming::MessageUpdate,
+    gateway::payload::incoming::{MessageDelete, MessageUpdate},
     id::{ChannelId, MessageId, WebhookId},
 };
 
@@ -56,11 +56,26 @@ impl Cache {
                         *embeds = updated_embeds;
                     }
                 }
-                return None;
+                return Some(());
             }
         }
 
         None
+    }
+
+    pub fn delete_message(&self, message: MessageDelete) {
+        self._delete_message(message);
+    }
+
+    fn _delete_message(&self, message: MessageDelete) -> Option<()> {
+        let mut messages = self.messages.get_mut(&message.channel_id)?;
+        let message_position = messages
+            .iter_mut()
+            .position(|cached_message| cached_message.id == message.id)?;
+
+        messages.remove(message_position);
+
+        Some(())
     }
 }
 
