@@ -14,6 +14,7 @@ async fn _handle(ctx: Context, event: Event) -> Result<()> {
         Event::InteractionCreate(interaction) => commands::handle(ctx, interaction.0).await?,
         Event::MessageCreate(message) => ctx.cache.add_message(message.0),
         Event::MessageUpdate(message) => ctx.cache.update_message(*message),
+        Event::MessageDelete(message) => ctx.cache.delete_message(message),
         _ => bail!("unexpected event: {:?}", event),
     }
     Ok(())
