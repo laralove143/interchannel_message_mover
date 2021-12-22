@@ -15,7 +15,8 @@ async fn _handle(ctx: Context, event: Event) -> Result<()> {
         Event::MessageCreate(message) => ctx.cache.add_message(message.0),
         Event::MessageUpdate(message) => ctx.cache.update_message(*message),
         Event::MessageDelete(message) => ctx.cache.delete_message(message),
-        _ => bail!("unexpected event: {:?}", event),
+        Event::MessageDeleteBulk(messages) => ctx.cache.delete_messages(messages),
+        _ => bail!("unexpected event:\n{:#?}", event),
     }
     Ok(())
 }
