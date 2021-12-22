@@ -1,23 +1,27 @@
 use std::collections::VecDeque;
 
+use anyhow::Result;
 use dashmap::DashMap;
+use twilight_http::client::Client;
 use twilight_model::{
     channel::{embed::Embed, Message},
     gateway::payload::incoming::{MessageDelete, MessageDeleteBulk, MessageUpdate},
-    id::{ChannelId, MessageId, WebhookId},
+    id::{ChannelId, MessageId, UserId, WebhookId},
 };
 
 pub struct Cache {
+    pub user_id: UserId,
     messages: DashMap<ChannelId, VecDeque<CachedMessage>>,
     webhooks: DashMap<ChannelId, CachedWebhook>,
 }
 
 impl Cache {
-    pub fn new() -> Self {
-        Cache {
+    pub async fn new(http: &Client) -> Result<Self> {
+        Ok(Cache {
+            user_id: http.current_user().exec().await?.model().await?.id,
             messages: DashMap::new(),
             webhooks: DashMap::new(),
-        }
+        })
     }
 
     pub fn get_messages(&self, channel_id: ChannelId) -> Option<&VecDeque<CachedMessage>> {
