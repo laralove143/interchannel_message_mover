@@ -1,12 +1,11 @@
 use anyhow::Result;
 use twilight_interactions::command::{CommandModel, CreateCommand};
-use twilight_model::application::interaction::{
-    application_command::InteractionChannel, ApplicationCommand,
+use twilight_model::{
+    application::interaction::{application_command::InteractionChannel, ApplicationCommand},
+    channel::embed::Embed,
 };
 
-use crate::Context;
-
-use super::CommandResult;
+use crate::{cache::MessageContent, Context};
 
 #[derive(CreateCommand, CommandModel)]
 #[command(
@@ -27,9 +26,37 @@ pub struct MoveLastMessages {
     channel: InteractionChannel,
 }
 
-pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<CommandResult> {
-    let token = command.token;
+pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<String>> {
     let options = MoveLastMessages::from_interaction(command.data.into())?;
+    let messages = match ctx.cache.get_messages(command.channel_id) {
+        Some(messages) => messages,
+        None => {
+            return Ok("looks like i couldn't read anything here :( check my permissions please")
+        }
+    };
 
-    Ok((ctx, token, "Done!").into())
+    let (content, embeds, message_ids) = messages
+        .iter()
+        .rev()
+        .take(options.message_count as usize)
+        .rfold(
+            (String::new(), Vec::new(), Vec::new()),
+            |(mut message_content, mut message_embeds, mut message_ids), message| {
+                if let MessageContent::Valid { content, embeds } = &message.content {
+                    message_content.push_str(&content);
+                    message_embeds.extend(embeds);
+                    message_content.push('\n');
+                    message_ids.push(message.id);
+                }
+                (message_content, message_embeds, message_ids)
+            },
+        );
+
+    // TODO: check for perms first
+    ctx.http
+        .delete_messages(command.channel_id, &message_ids)
+        .exec()
+        .await?;
+
+    Ok("Done!")
 }
