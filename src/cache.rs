@@ -20,6 +20,10 @@ impl Cache {
         }
     }
 
+    pub fn get_messages(&self, channel_id: ChannelId) -> Option<&VecDeque<CachedMessage>> {
+        Some(self.messages.get(&channel_id)?.value())
+    }
+
     pub fn add_message(&self, message: Message) {
         let channel_id = message.channel_id;
 
@@ -99,13 +103,13 @@ impl Cache {
 }
 
 #[derive(Debug)]
-struct CachedMessage {
-    id: MessageId,
-    content: MessageContent,
+pub struct CachedMessage {
+    pub id: MessageId,
+    pub content: MessageContent,
 }
 
 #[derive(Debug)]
-enum MessageContent {
+pub enum MessageContent {
     Valid { content: String, embeds: Vec<Embed> },
     AttachmentsOrComponents,
 }
