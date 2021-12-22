@@ -1,5 +1,7 @@
 mod move_last_messages;
 
+use std::mem;
+
 use anyhow::{bail, Result};
 use twilight_http::Client;
 use twilight_interactions::command::CreateCommand;
@@ -10,28 +12,11 @@ use twilight_model::{
 };
 use twilight_util::builder::CallbackDataBuilder;
 
+use self::move_last_messages::MoveLastMessages;
 use crate::Context;
 
-use self::move_last_messages::MoveLastMessages;
-
-pub struct CommandResult {
-    ctx: Context,
-    token: String,
-    reply: String,
-}
-
-impl<T: Into<String>> From<(Context, String, T)> for CommandResult {
-    fn from(result: (Context, String, T)) -> Self {
-        Self {
-            ctx: result.0,
-            token: result.1,
-            reply: result.2.into(),
-        }
-    }
-}
-
 pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
-    let command = if let Interaction::ApplicationCommand(command) = interaction {
+    let mut command = if let Interaction::ApplicationCommand(command) = interaction {
         *command
     } else {
         bail!(
@@ -41,21 +26,20 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     };
 
     let interaction_id = command.id;
+    let token = mem::take(&mut command.token);
 
-    let result = match command.data.name.as_ref() {
-        "move_last_messages" => move_last_messages::run(ctx, command).await?,
+    let reply = match command.data.name.as_ref() {
+        "move_last_messages" => move_last_messages::run(ctx.clone(), command).await?,
         _ => bail!("unexpected command name: {}", command.data.name),
     };
 
-    result
-        .ctx
-        .http
+    ctx.http
         .interaction_callback(
             interaction_id,
-            &result.token,
+            &token,
             &InteractionResponse::ChannelMessageWithSource(
                 CallbackDataBuilder::new()
-                    .content(result.reply)
+                    .content(reply.into())
                     .flags(MessageFlags::EPHEMERAL)
                     .build(),
             ),
