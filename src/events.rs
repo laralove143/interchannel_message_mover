@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use twilight_gateway::Event;
 
 use crate::{commands, Context};
@@ -16,7 +16,7 @@ async fn _handle(ctx: Context, event: Event) -> Result<()> {
         Event::MessageUpdate(message) => ctx.cache.update_message(*message),
         Event::MessageDelete(message) => ctx.cache.delete_message(message),
         Event::MessageDeleteBulk(messages) => ctx.cache.delete_messages(messages),
-        _ => bail!("unexpected event:\n{:#?}", event),
+        _ => (),
     }
     Ok(())
 }

@@ -18,8 +18,9 @@ twilight-http = { version = "0.8", default-features = false, features = [
     "rustls",
     "trust-dns",
 ] }
-twilight-model = "0.8"
 twilight-util = { version = "0.8", features = ["builder"] }
+twilight-cache-inmemory = { version = "0.8", features = ["permission-calculator"] }
+twilight-model = "0.8"
 twilight-interactions = "0.8"
 dashmap = "5.0"
 anyhow = "1.0"
