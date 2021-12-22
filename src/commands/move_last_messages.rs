@@ -2,7 +2,7 @@ use anyhow::Result;
 use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_model::{
     application::interaction::{application_command::InteractionChannel, ApplicationCommand},
-    channel::embed::Embed,
+    guild::Permissions,
 };
 
 use crate::{cache::MessageContent, Context};
@@ -27,8 +27,19 @@ pub struct MoveLastMessages {
 }
 
 pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<String>> {
+    let channel_id = command.channel_id;
+
+    if !ctx
+        .twilight_cache
+        .permissions()
+        .in_channel(ctx.cache.user_id, channel_id)?
+        .contains(Permissions::MANAGE_MESSAGES)
+    {
+        return Ok("give me the manage messages permission first please");
+    }
+
     let options = MoveLastMessages::from_interaction(command.data.into())?;
-    let messages = match ctx.cache.get_messages(command.channel_id) {
+    let messages = match ctx.cache.get_messages(channel_id) {
         Some(messages) => messages,
         None => {
             return Ok("looks like i couldn't read anything here :( check my permissions please")
@@ -52,11 +63,10 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
             },
         );
 
-    // TODO: check for perms first
     ctx.http
-        .delete_messages(command.channel_id, &message_ids)
+        .delete_messages(channel_id, &message_ids)
         .exec()
         .await?;
 
-    Ok("Done!")
+    Ok("done!")
 }
