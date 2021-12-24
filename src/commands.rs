@@ -28,22 +28,28 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     let interaction_id = command.id;
     let token = mem::take(&mut command.token);
 
+    ctx.http
+        .interaction_callback(
+            interaction_id,
+            &token,
+            &InteractionResponse::DeferredChannelMessageWithSource(
+                CallbackDataBuilder::new()
+                    .flags(MessageFlags::EPHEMERAL)
+                    .build(),
+            ),
+        )
+        .exec()
+        .await?;
+
+    // TODO: handle it when theres an error
     let reply = match command.data.name.as_ref() {
         "move_last_messages" => move_last_messages::run(ctx.clone(), command).await?,
         _ => bail!("unexpected command name: {}", command.data.name),
     };
 
     ctx.http
-        .interaction_callback(
-            interaction_id,
-            &token,
-            &InteractionResponse::ChannelMessageWithSource(
-                CallbackDataBuilder::new()
-                    .content(reply.into())
-                    .flags(MessageFlags::EPHEMERAL)
-                    .build(),
-            ),
-        )
+        .create_followup_message(&token)?
+        .content(&reply.into())
         .exec()
         .await?;
 
