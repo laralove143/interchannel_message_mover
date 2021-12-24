@@ -122,12 +122,7 @@ impl From<Message> for CachedMessage {
                 avatar_url.push_str(&message.author.id.get().to_string());
                 avatar_url.push('/');
                 avatar_url.push_str(&avatar);
-                // TODO: test with gif avatars
-                if avatar.starts_with("a_") {
-                    avatar_url.push_str(".gif");
-                } else {
-                    avatar_url.push_str(".png");
-                }
+                avatar_url.push_str(".png");
                 avatar_url
             }),
         }
