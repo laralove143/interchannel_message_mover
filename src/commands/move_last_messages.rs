@@ -36,26 +36,21 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
         .unwrap()
         .contains(Permissions::MANAGE_MESSAGES)
     {
-        return Ok("you need the **manage messages** permissions for that");
+        return Ok("you need **manage messages** permission for that!");
     }
 
     let options = MoveLastMessages::from_interaction(command.data.into())?;
 
-    if !options
-        .channel
-        .permissions
-        .contains(Permissions::SEND_MESSAGES | Permissions::MANAGE_WEBHOOKS)
-    {
-        return Ok("i need the **send messages** and **manage webhooks** permissions for that");
-    }
+    let permissions_cache = ctx.twilight_cache.permissions();
 
-    if !ctx
-        .twilight_cache
-        .permissions()
+    if !(permissions_cache
         .in_channel(ctx.cache.user_id, channel_id)?
         .contains(Permissions::MANAGE_MESSAGES)
+        || permissions_cache
+            .in_channel(ctx.cache.user_id, options.channel.id)?
+            .contains(Permissions::MANAGE_WEBHOOKS))
     {
-        return Ok("i need the **manage messages** permission for that");
+        return Ok("please give me **manage messages** and **manage webhooks** permissions >.<");
     }
 
     let messages = match ctx.cache.get_messages(channel_id) {
@@ -68,20 +63,18 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
         }
     };
 
-    let target_channel_id = options.channel.id;
-
-    let webhook = match ctx.cache.get_webhook(target_channel_id) {
+    let webhook = match ctx.cache.get_webhook(options.channel.id) {
         Some(webhook) => webhook,
         None => {
             let webhook = ctx
                 .http
-                .create_webhook(target_channel_id, "message transit")
+                .create_webhook(options.channel.id, "message transit")
                 .exec()
                 .await?
                 .model()
                 .await?;
             ctx.cache.add_webhook(webhook);
-            ctx.cache.get_webhook(target_channel_id).unwrap()
+            ctx.cache.get_webhook(options.channel.id).unwrap()
         }
     };
 
