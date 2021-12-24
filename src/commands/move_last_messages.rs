@@ -29,9 +29,18 @@ pub struct MoveLastMessages {
 pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<String>> {
     let channel_id = command.channel_id;
 
+    if !command
+        .member
+        .unwrap()
+        .permissions
+        .unwrap()
+        .contains(Permissions::MANAGE_MESSAGES)
+    {
+        return Ok("you need the **manage messages** permissions for that");
+    }
+
     let options = MoveLastMessages::from_interaction(command.data.into())?;
 
-    // TODO: let only admins use this command
     if !options
         .channel
         .permissions
