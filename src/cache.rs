@@ -108,7 +108,7 @@ pub struct CachedMessage {
     pub id: MessageId,
     pub content: String,
     pub username: String,
-    pub avatar_url: Option<String>,
+    pub avatar: Option<(UserId, String)>,
 }
 
 impl From<Message> for CachedMessage {
@@ -117,14 +117,10 @@ impl From<Message> for CachedMessage {
             id: message.id,
             content: message.content,
             username: message.author.name,
-            avatar_url: message.author.avatar.map(|avatar| {
-                let mut avatar_url = "https://cdn.discordapp.com/avatars/".to_string();
-                avatar_url.push_str(&message.author.id.get().to_string());
-                avatar_url.push('/');
-                avatar_url.push_str(&avatar);
-                avatar_url.push_str(".png");
-                avatar_url
-            }),
+            avatar: message
+                .author
+                .avatar
+                .map(|avatar| (message.author.id, avatar)),
         }
     }
 }
@@ -136,6 +132,7 @@ pub struct CachedWebhook {
 
 impl From<Webhook> for CachedWebhook {
     fn from(webhook: Webhook) -> Self {
+        // TODO: cache it properly, add/update/remove it on event, cache them on startup
         Self {
             id: webhook.id,
             token: webhook.token.unwrap(),
