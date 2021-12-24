@@ -2,7 +2,7 @@ mod move_last_messages;
 
 use std::mem;
 
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use twilight_http::Client;
 use twilight_interactions::command::CreateCommand;
 use twilight_model::{
@@ -41,19 +41,22 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         .exec()
         .await?;
 
-    // TODO: handle it when theres an error
-    let reply = match command.data.name.as_ref() {
-        "move_last_messages" => move_last_messages::run(ctx.clone(), command).await?,
-        _ => bail!("unexpected command name: {}", command.data.name),
-    };
+    let result = match command.data.name.as_ref() {
+        "move_last_messages" => move_last_messages::run(ctx.clone(), command).await,
+        _ => Err(anyhow!("unexpected command name: {}", command.data.name)),
+    }
+    .map(|reply| reply.into());
 
     ctx.http
         .create_followup_message(&token)?
-        .content(&reply.into())
+        .content(result.as_ref().unwrap_or(
+            &"sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix it \
+              soon!",
+        ))
         .exec()
         .await?;
 
-    Ok(())
+    result.map(|_| ())
 }
 
 pub async fn create(http: &Client, guild_id: GuildId) -> Result<()> {
