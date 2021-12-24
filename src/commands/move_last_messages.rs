@@ -26,7 +26,7 @@ pub struct MoveLastMessages {
     channel: InteractionChannel,
 }
 
-pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<String>> {
+pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl Into<&'a str>> {
     let channel_id = command.channel_id;
 
     if !command
@@ -83,17 +83,14 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
     for message in messages.iter().take(options.message_count as usize) {
         match &message.avatar {
             Some(avatar) => {
-                let mut avatar_url = "https://cdn.discordapp.com/avatars/".to_string();
-                avatar_url.push_str(&avatar.0.to_string());
-                avatar_url.push('/');
-                avatar_url.push_str(&avatar.1);
-                avatar_url.push_str(".png");
-
                 ctx.http
                     .execute_webhook(webhook.id, &webhook.token)
                     .content(&message.content)
                     .username(&message.username)
-                    .avatar_url(&avatar_url)
+                    .avatar_url(&format!(
+                        "https://cdn.discordapp.com/avatars/{}/{}.png",
+                        avatar.0, avatar.1
+                    ))
                     .exec()
                     .await?;
             }
