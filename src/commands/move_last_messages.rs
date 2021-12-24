@@ -78,26 +78,31 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
         }
     };
 
-    let (content, message_ids) = messages
-        .iter()
-        .rev()
-        .take(options.message_count as usize)
-        .rfold(
-            (String::new(), Vec::new()),
-            |(mut content, mut message_ids), message| {
-                content.push_str(&message.content);
-                content.push('\n');
-                message_ids.push(message.id);
+    let mut message_ids = Vec::new();
 
-                (content, message_ids)
-            },
-        );
+    for message in messages.iter().rev().take(options.message_count as usize) {
+        match &message.avatar_url {
+            Some(avatar_url) => {
+                ctx.http
+                    .execute_webhook(webhook.id, &webhook.token)
+                    .content(&message.content)
+                    .username(&message.username)
+                    .avatar_url(avatar_url)
+                    .exec()
+                    .await?;
+            }
+            None => {
+                ctx.http
+                    .execute_webhook(webhook.id, &webhook.token)
+                    .content(&message.content)
+                    .username(&message.username)
+                    .exec()
+                    .await?;
+            }
+        }
 
-    ctx.http
-        .execute_webhook(webhook.id, &webhook.token)
-        .content(&content)
-        .exec()
-        .await?;
+        message_ids.push(message.id);
+    }
 
     ctx.http
         .delete_messages(channel_id, &message_ids)
