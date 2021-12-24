@@ -4,7 +4,7 @@ use anyhow::Result;
 use dashmap::DashMap;
 use twilight_http::client::Client;
 use twilight_model::{
-    channel::{embed::Embed, Message},
+    channel::{webhook::Webhook, Message},
     gateway::payload::incoming::{MessageDelete, MessageDeleteBulk, MessageUpdate},
     id::{ChannelId, MessageId, UserId, WebhookId},
 };
@@ -28,6 +28,10 @@ impl Cache {
         Some(self.messages.get(&channel_id)?.value())
     }
 
+    pub fn get_webhook(&self, channel_id: ChannelId) -> Option<&CachedWebhook> {
+        Some(self.webhooks.get(&channel_id)?.value())
+    }
+
     pub fn add_message(&self, message: Message) {
         let channel_id = message.channel_id;
 
@@ -43,30 +47,23 @@ impl Cache {
         messages.push_back(message.into());
     }
 
+    pub fn add_webhook(&self, webhook: Webhook) {
+        self.webhooks.insert(webhook.channel_id, webhook.into());
+    }
+
     pub fn update_message(&self, message: MessageUpdate) {
         self._update_message(message);
     }
 
     fn _update_message(&self, message: MessageUpdate) -> Option<()> {
-        let mut messages = self.messages.get_mut(&message.channel_id)?;
+        let content = message.content?;
 
-        for cached_message in messages.value_mut() {
-            if cached_message.id == message.id {
-                if !message.attachments.map_or(true, |v| v.is_empty()) {
-                    cached_message.content = MessageContent::AttachmentsOrComponents;
-                } else if let MessageContent::Valid { content, embeds } =
-                    &mut cached_message.content
-                {
-                    if let Some(updated_content) = message.content {
-                        *content = updated_content;
-                    }
-                    if let Some(updated_embeds) = message.embeds {
-                        *embeds = updated_embeds;
-                    }
-                }
-                return Some(());
-            }
-        }
+        self.messages
+            .get_mut(&message.channel_id)?
+            .value_mut()
+            .iter_mut()
+            .find(|cached_message| cached_message.id == message.id)?
+            .content = content;
 
         None
     }
@@ -83,7 +80,7 @@ impl Cache {
 
         messages.remove(message_position);
 
-        Some(())
+        None
     }
 
     pub fn delete_messages(&self, messages: MessageDeleteBulk) {
@@ -109,32 +106,28 @@ impl Cache {
 #[derive(Debug)]
 pub struct CachedMessage {
     pub id: MessageId,
-    pub content: MessageContent,
-}
-
-#[derive(Debug)]
-pub enum MessageContent {
-    Valid { content: String, embeds: Vec<Embed> },
-    AttachmentsOrComponents,
+    pub content: String,
 }
 
 impl From<Message> for CachedMessage {
     fn from(message: Message) -> Self {
         Self {
             id: message.id,
-            content: if message.attachments.is_empty() && message.components.is_empty() {
-                MessageContent::Valid {
-                    content: message.content,
-                    embeds: message.embeds,
-                }
-            } else {
-                MessageContent::AttachmentsOrComponents
-            },
+            content: message.content,
         }
     }
 }
 
-struct CachedWebhook {
-    id: WebhookId,
-    token: String,
+pub struct CachedWebhook {
+    pub id: WebhookId,
+    pub token: String,
+}
+
+impl From<Webhook> for CachedWebhook {
+    fn from(webhook: Webhook) -> Self {
+        Self {
+            id: webhook.id,
+            token: webhook.token.unwrap(),
+        }
+    }
 }
