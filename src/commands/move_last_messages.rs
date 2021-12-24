@@ -104,10 +104,17 @@ pub async fn run(ctx: Context, command: ApplicationCommand) -> Result<impl Into<
         message_ids.push(message.id);
     }
 
-    ctx.http
-        .delete_messages(channel_id, &message_ids)
-        .exec()
-        .await?;
+    if message_ids.len() == 1 {
+        ctx.http
+            .delete_message(channel_id, message_ids[0])
+            .exec()
+            .await?;
+    } else {
+        ctx.http
+            .delete_messages(channel_id, &message_ids)
+            .exec()
+            .await?;
+    }
 
     Ok("done!")
 }
