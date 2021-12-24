@@ -107,6 +107,8 @@ impl Cache {
 pub struct CachedMessage {
     pub id: MessageId,
     pub content: String,
+    pub username: String,
+    pub avatar_url: Option<String>,
 }
 
 impl From<Message> for CachedMessage {
@@ -114,6 +116,20 @@ impl From<Message> for CachedMessage {
         Self {
             id: message.id,
             content: message.content,
+            username: message.author.name,
+            avatar_url: message.author.avatar.map(|avatar| {
+                let mut avatar_url = "https://cdn.discordapp.com/avatars/".to_string();
+                avatar_url.push_str(&message.author.id.get().to_string());
+                avatar_url.push('/');
+                avatar_url.push_str(&avatar);
+                // TODO: test with gif avatars
+                if avatar.starts_with("a_") {
+                    avatar_url.push_str(".gif");
+                } else {
+                    avatar_url.push_str(".png");
+                }
+                avatar_url
+            }),
         }
     }
 }
