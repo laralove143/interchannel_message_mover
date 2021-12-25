@@ -22,12 +22,13 @@ pub struct ContextValue {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let intents = Intents::GUILD_MESSAGES | Intents::GUILDS;
+    let intents = Intents::GUILD_MESSAGES | Intents::GUILDS | Intents::GUILD_WEBHOOKS;
     let event_types = EventTypeFlags::INTERACTION_CREATE
         | EventTypeFlags::MESSAGE_CREATE
         | EventTypeFlags::MESSAGE_UPDATE
         | EventTypeFlags::MESSAGE_DELETE
         | EventTypeFlags::MESSAGE_DELETE_BULK
+        | EventTypeFlags::WEBHOOKS_UPDATE
         | EventTypeFlags::GUILD_CREATE
         | EventTypeFlags::GUILD_UPDATE
         | EventTypeFlags::GUILD_DELETE
