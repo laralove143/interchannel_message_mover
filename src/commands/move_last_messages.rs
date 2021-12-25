@@ -29,7 +29,6 @@ pub struct MoveLastMessages {
 pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl Into<&'a str>> {
     let channel_id = command.channel_id;
 
-    // TODO: test webhook cache
     if !command
         .member
         .unwrap()
