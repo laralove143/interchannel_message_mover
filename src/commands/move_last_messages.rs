@@ -5,7 +5,7 @@ use twilight_model::{
     guild::Permissions,
 };
 
-use crate::Context;
+use crate::{Cache, Context};
 
 #[derive(CreateCommand, CommandModel)]
 #[command(
@@ -29,6 +29,7 @@ pub struct MoveLastMessages {
 pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl Into<&'a str>> {
     let channel_id = command.channel_id;
 
+    // TODO: test webhook cache
     if !command
         .member
         .unwrap()
@@ -53,6 +54,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         return Ok("please give me **manage messages** and **manage webhooks** permissions >.<");
     }
 
+    // TODO: turn this into a map somehow
     let messages = match ctx.cache.get_messages(channel_id) {
         Some(messages) => messages,
         None => {
@@ -63,20 +65,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         }
     };
 
-    let webhook = match ctx.cache.get_webhook(options.channel.id) {
-        Some(webhook) => webhook,
-        None => {
-            let webhook = ctx
-                .http
-                .create_webhook(options.channel.id, "message transit")
-                .exec()
-                .await?
-                .model()
-                .await?;
-            ctx.cache.add_webhook(webhook);
-            ctx.cache.get_webhook(options.channel.id).unwrap()
-        }
-    };
+    let webhook = Cache::get_webhook(&ctx, options.channel.id).await?;
 
     let mut message_ids = Vec::new();
 
@@ -107,6 +96,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         message_ids.push(message.id);
     }
 
+    // TODO: fix this
     if message_ids.len() == 1 {
         ctx.http
             .delete_message(channel_id, message_ids[0])
