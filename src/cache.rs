@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use dashmap::DashMap;
 use twilight_http::client::Client;
 use twilight_model::{
@@ -8,6 +8,8 @@ use twilight_model::{
     gateway::payload::incoming::{MessageDelete, MessageDeleteBulk, MessageUpdate},
     id::{ChannelId, MessageId, UserId, WebhookId},
 };
+
+use crate::Context;
 
 pub struct Cache {
     pub user_id: UserId,
@@ -28,8 +30,39 @@ impl Cache {
         Some(self.messages.get(&channel_id)?.value())
     }
 
-    pub fn get_webhook(&self, channel_id: ChannelId) -> Option<&CachedWebhook> {
-        Some(self.webhooks.get(&channel_id)?.value())
+    pub async fn get_webhook(ctx: &Context, channel_id: ChannelId) -> Result<&CachedWebhook> {
+        if let Some(pair) = ctx.cache.webhooks.get(&channel_id) {
+            Ok(pair.value())
+        } else {
+            let http_application_id = ctx.http.application_id();
+            let webhook = if let Some(webhook) = ctx
+                .http
+                .channel_webhooks(channel_id)
+                .exec()
+                .await?
+                .models()
+                .await?
+                .into_iter()
+                .find(|webhook| webhook.application_id == http_application_id)
+            {
+                webhook
+            } else {
+                ctx.http
+                    .create_webhook(channel_id, "message highway")
+                    .exec()
+                    .await?
+                    .model()
+                    .await?
+            };
+
+            ctx.cache.webhooks.insert(channel_id, webhook.into());
+            Ok(ctx
+                .cache
+                .webhooks
+                .get(&channel_id)
+                .context("created or retrieved webhook is not cached")?
+                .value())
+        }
     }
 
     pub fn add_message(&self, message: Message) {
@@ -47,10 +80,6 @@ impl Cache {
         messages.push_back(message.into());
     }
 
-    pub fn add_webhook(&self, webhook: Webhook) {
-        self.webhooks.insert(webhook.channel_id, webhook.into());
-    }
-
     pub fn update_message(&self, message: MessageUpdate) {
         self._update_message(message);
     }
@@ -66,6 +95,29 @@ impl Cache {
             .content = content;
 
         None
+    }
+
+    pub async fn update_webhooks(ctx: Context, channel_id: ChannelId) -> Result<()> {
+        let cached_webhook_id = if let Some(webhook) = ctx.cache.webhooks.get(&channel_id) {
+            webhook.id
+        } else {
+            return Ok(());
+        };
+
+        if !ctx
+            .http
+            .channel_webhooks(channel_id)
+            .exec()
+            .await?
+            .models()
+            .await?
+            .iter()
+            .any(|webhook| webhook.id == cached_webhook_id)
+        {
+            ctx.cache.webhooks.remove(&channel_id);
+        }
+
+        Ok(())
     }
 
     pub fn delete_message(&self, message: MessageDelete) {
@@ -103,7 +155,6 @@ impl Cache {
     }
 }
 
-#[derive(Debug)]
 pub struct CachedMessage {
     pub id: MessageId,
     pub content: String,
@@ -125,6 +176,7 @@ impl From<Message> for CachedMessage {
     }
 }
 
+#[derive(Debug)]
 pub struct CachedWebhook {
     pub id: WebhookId,
     pub token: String,
@@ -132,7 +184,6 @@ pub struct CachedWebhook {
 
 impl From<Webhook> for CachedWebhook {
     fn from(webhook: Webhook) -> Self {
-        // TODO: cache it properly, add/update/remove it on event, cache them on startup
         Self {
             id: webhook.id,
             token: webhook.token.unwrap(),
