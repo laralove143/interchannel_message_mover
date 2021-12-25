@@ -54,14 +54,13 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
     }
 
     // TODO: turn this into a map somehow
-    let messages = match ctx.cache.get_messages(channel_id) {
-        Some(messages) => messages,
-        None => {
-            return Ok(
-                "looks like i couldn't read anything here :( make sure i have **view channels** \
-                 permission",
-            )
-        }
+    let messages = if let Some(messages) = ctx.cache.get_messages(channel_id) {
+        messages
+    } else {
+        return Ok(
+            "looks like i couldn't read anything here :( make sure i have **view channels** \
+             permission",
+        );
     };
 
     let webhook = Cache::get_webhook(&ctx, options.channel.id).await?;
