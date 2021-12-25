@@ -133,6 +133,7 @@ impl Cache {
         messages.remove(message_position);
 
         if messages.is_empty() {
+            drop(messages);
             self.messages.remove(&message.channel_id);
         }
 
@@ -163,6 +164,7 @@ impl Cache {
     }
 }
 
+#[derive(Debug)]
 pub struct CachedMessage {
     pub id: MessageId,
     pub content: String,
