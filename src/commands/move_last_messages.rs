@@ -53,7 +53,6 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         return Ok("please give me **manage messages** and **manage webhooks** permissions >.<");
     }
 
-    // TODO: turn this into a map somehow
     let messages = if let Some(messages) = ctx.cache.get_messages(channel_id) {
         messages
     } else {
