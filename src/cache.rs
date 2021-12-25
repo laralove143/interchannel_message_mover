@@ -132,6 +132,10 @@ impl Cache {
 
         messages.remove(message_position);
 
+        if messages.is_empty() {
+            self.messages.remove(&message.channel_id);
+        }
+
         None
     }
 
@@ -151,7 +155,11 @@ impl Cache {
             }
         }
 
-        Some(())
+        if cached_messages.is_empty() {
+            self.messages.remove(&messages.channel_id);
+        }
+
+        None
     }
 }
 

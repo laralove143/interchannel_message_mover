@@ -93,7 +93,6 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         message_ids.push(message.id);
     }
 
-    // TODO: fix this
     if message_ids.len() == 1 {
         ctx.http
             .delete_message(channel_id, message_ids[0])
