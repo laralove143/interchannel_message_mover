@@ -1,23 +1,23 @@
-mod cache;
 mod commands;
 mod events;
+mod webhooks;
 
 use std::{env, num::NonZeroU64, str::FromStr, sync::Arc};
 
 use anyhow::Result;
-use cache::Cache;
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
-use twilight_model::id::GuildId;
-
+use twilight_model::id::{ChannelId, GuildId, UserId};
+use webhooks::CachedWebhook;
 type Context = Arc<ContextValue>;
-
+use dashmap::DashMap;
 pub struct ContextValue {
     http: Client,
-    cache: Cache,
-    twilight_cache: InMemoryCache,
+    cache: InMemoryCache,
+    webhooks: DashMap<ChannelId, CachedWebhook>,
+    user_id: UserId,
 }
 
 #[tokio::main]
@@ -41,8 +41,11 @@ async fn main() -> Result<()> {
         | EventTypeFlags::MEMBER_ADD
         | EventTypeFlags::MEMBER_UPDATE
         | EventTypeFlags::MEMBER_REMOVE;
-    let resource_types =
-        ResourceType::GUILD | ResourceType::ROLE | ResourceType::CHANNEL | ResourceType::MEMBER;
+    let resource_types = ResourceType::MESSAGE
+        | ResourceType::GUILD
+        | ResourceType::ROLE
+        | ResourceType::CHANNEL
+        | ResourceType::MEMBER;
 
     let token = env::var("TEST_BOT_TOKEN")?;
     let guild_id = GuildId(NonZeroU64::from_str(&env::var("GUILD_ID")?)?);
@@ -66,15 +69,17 @@ async fn main() -> Result<()> {
     commands::create(&http, guild_id).await?;
 
     let ctx = Arc::new(ContextValue {
-        cache: Cache::new(&http).await?,
+        user_id: http.current_user().exec().await?.model().await?.id,
         http,
-        twilight_cache: InMemoryCache::builder()
+        cache: InMemoryCache::builder()
             .resource_types(resource_types)
+            .message_cache_size(20)
             .build(),
+        webhooks: DashMap::new(),
     });
 
     while let Some((_, event)) = events.next().await {
-        ctx.twilight_cache.update(&event);
+        ctx.cache.update(&event);
         tokio::spawn(events::handle(ctx.clone(), event));
     }
 
