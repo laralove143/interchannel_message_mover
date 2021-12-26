@@ -162,6 +162,10 @@ impl Cache {
 
         None
     }
+
+    pub fn delete_channel(&self, channel_id: ChannelId) {
+        self.messages.remove(&channel_id);
+    }
 }
 
 #[derive(Debug)]

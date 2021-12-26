@@ -16,6 +16,7 @@ async fn _handle(ctx: Context, event: Event) -> Result<()> {
         Event::MessageUpdate(message) => ctx.cache.update_message(*message),
         Event::MessageDelete(message) => ctx.cache.delete_message(message),
         Event::MessageDeleteBulk(messages) => ctx.cache.delete_messages(messages),
+        Event::ChannelDelete(channel) => ctx.cache.delete_channel(channel.id()),
         Event::WebhooksUpdate(update) => Cache::update_webhooks(ctx, update.channel_id).await?,
         _ => (),
     }
