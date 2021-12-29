@@ -17,4 +17,4 @@ moves the last `message_count` messages (up to 20 messages) to the `channel` you
 ## nerdy stuff
 made with [rust](https://www.rust-lang.org) and [twilight](https://github.com/twilight-rs/twilight)
 
-made by me (laralove143), licensed mit
+*made by me (laralove143), licensed MIT*
