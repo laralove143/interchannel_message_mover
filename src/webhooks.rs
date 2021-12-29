@@ -1,12 +1,7 @@
-use std::collections::VecDeque;
-
-use anyhow::{Context as _, Result};
-use dashmap::DashMap;
-use twilight_http::client::Client;
+use anyhow::Result;
 use twilight_model::{
-    channel::{webhook::Webhook, Message},
-    gateway::payload::incoming::{MessageDelete, MessageDeleteBulk, MessageUpdate},
-    id::{ChannelId, MessageId, UserId, WebhookId},
+    channel::webhook::Webhook,
+    id::{ChannelId, WebhookId},
 };
 
 use crate::Context;
