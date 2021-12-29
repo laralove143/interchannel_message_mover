@@ -29,16 +29,12 @@ pub struct MoveLastMessages {
 
 pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl Into<&'a str>> {
     let command_channel_id = command.channel_id;
-
-    if !command
-        .member
-        .unwrap()
+    let command_member = command.member.unwrap();
+    let command_member_id = command_member.user.unwrap().id;
+    let command_member_can_manage_messages = command_member
         .permissions
         .unwrap()
-        .contains(Permissions::MANAGE_MESSAGES)
-    {
-        return Ok("you need **manage messages** permission for that!");
-    }
+        .contains(Permissions::MANAGE_MESSAGES);
 
     let options = MoveLastMessages::from_interaction(command.data.into())?;
     let target_channel_id = options.channel.id;
@@ -47,11 +43,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
     let permissions_cache = ctx.cache.permissions();
     if !(permissions_cache
         .in_channel(ctx.user_id, command_channel_id)?
-        .contains(
-            Permissions::MANAGE_MESSAGES
-                | Permissions::VIEW_CHANNEL
-                | Permissions::READ_MESSAGE_HISTORY,
-        )
+        .contains(Permissions::MANAGE_MESSAGES | Permissions::VIEW_CHANNEL)
         && permissions_cache
             .in_channel(ctx.user_id, target_channel_id)?
             .contains(Permissions::MANAGE_WEBHOOKS))
@@ -74,8 +66,17 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
 
     for message_id in message_ids.iter().rev() {
         let message = ctx.cache.message(*message_id).unwrap();
+        let author_id = message.author();
+
+        if author_id != command_member_id && !command_member_can_manage_messages {
+            return Ok(
+                "this message isn't yours and you don't have **manage messages** permission! i'll \
+                 stop here.",
+            );
+        }
+
         let author_member = message.member().unwrap();
-        let author_user = ctx.cache.user(message.author()).unwrap();
+        let author_user = ctx.cache.user(author_id).unwrap();
 
         let webhook_exec = ctx
             .http
