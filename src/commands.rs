@@ -8,7 +8,6 @@ use twilight_interactions::command::CreateCommand;
 use twilight_model::{
     application::{callback::InteractionResponse, interaction::Interaction},
     channel::message::MessageFlags,
-    id::GuildId,
 };
 use twilight_util::builder::CallbackDataBuilder;
 
@@ -59,8 +58,8 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     result.map(|_| ())
 }
 
-pub async fn create(http: &Client, guild_id: GuildId) -> Result<()> {
-    http.set_guild_commands(guild_id, &[MoveLastMessages::create_command().into()])?
+pub async fn create(http: &Client) -> Result<()> {
+    http.set_global_commands(&[MoveLastMessages::create_command().into()])?
         .exec()
         .await?;
 
