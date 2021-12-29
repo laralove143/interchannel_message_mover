@@ -10,3 +10,6 @@ not to brag but im simple and im useful and i don't know why you still didn't ad
 ## commands
 ### /move_last_messages message_count channel
 moves the last `message_count` messages (up to 20 messages) to the `channel` you pick.. simple as that!
+
+## nerdy stuff
+made with [rust](https://www.rust-lang.org) and [twilight](https://github.com/twilight-rs/twilight)
