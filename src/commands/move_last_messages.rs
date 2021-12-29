@@ -56,11 +56,16 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
 
     let webhook = webhooks::get(&ctx, options.channel.id).await?;
 
-    let message_ids = if let Some(message_ids) = ctx.cache.channel_messages(command_channel_id) {
-        message_ids
-            .take(message_count as usize)
-            .collect::<Box<[MessageId]>>()
-    } else {
+    let message_ids = ctx
+        .cache
+        .channel_messages(command_channel_id)
+        .map(|ids| {
+            ids.take(message_count as usize)
+                .collect::<Box<[MessageId]>>()
+        })
+        .unwrap_or_default();
+
+    if message_ids.is_empty() {
         return Ok("i can only move messages that are sent after i joined.. sorry >.<");
     };
 
