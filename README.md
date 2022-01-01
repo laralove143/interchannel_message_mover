@@ -10,6 +10,8 @@ well now there's a solution! think of me like a truck; you call me with a comman
 
 not to brag but im simple and im useful and i don't know why you still didn't add me to your server! (or beg your favorite server's owner to add me)
 
+![example](example.gif)
+
 ## commands
 ### /move_last_messages [message_count] [channel]
 moves the last `message_count` messages (up to 20 messages) to the `channel` you pick.. simple as that!
