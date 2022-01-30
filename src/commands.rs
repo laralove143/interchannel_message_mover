@@ -1,6 +1,7 @@
+/// `move_last_messages` command
 mod move_last_messages;
 
-use std::mem;
+use std::{convert::Into, mem, sync::Arc};
 
 use anyhow::{anyhow, bail, Result};
 use twilight_http::Client;
@@ -14,6 +15,14 @@ use twilight_util::builder::CallbackDataBuilder;
 use self::move_last_messages::MoveLastMessages;
 use crate::Context;
 
+/// handle an interaction
+/// 1. get the inner command if it's an application command, return an error
+/// otherwise 2. copy and save the `interaction_id`
+/// 3. mutate command to take and save the token
+/// 4. defer the command with an empty response to avoid it being invalidated
+/// while processing 5. run the command and save its result
+/// 6. respond the command with result saved or the generic error message
+/// 6. return the saved error, if any
 pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     let mut command = if let Interaction::ApplicationCommand(command) = interaction {
         *command
@@ -41,10 +50,10 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         .await?;
 
     let result = match command.data.name.as_ref() {
-        "move_last_messages" => move_last_messages::run(ctx.clone(), command).await,
+        "move_last_messages" => move_last_messages::run(Arc::clone(&ctx), command).await,
         _ => Err(anyhow!("unexpected command name: {}", command.data.name)),
     }
-    .map(|reply| reply.into());
+    .map(Into::into);
 
     ctx.http
         .create_followup_message(&token)?
@@ -58,6 +67,7 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     result.map(|_| ())
 }
 
+/// create the commands globally
 pub async fn create(http: &Client) -> Result<()> {
     http.set_global_commands(&[MoveLastMessages::create_command().into()])?
         .exec()

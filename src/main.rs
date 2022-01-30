@@ -1,22 +1,36 @@
+//! description = "a simple discord bot to move messages between channels"
+#![allow(clippy::shadow_same, clippy::implicit_return)]
+
+/// interaction commands
 mod commands;
+/// event hander
 mod events;
+/// webhooks cache
 mod webhooks;
 
 use std::{env, sync::Arc};
 
 use anyhow::Result;
+use dashmap::DashMap;
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
 use twilight_model::id::{ChannelId, UserId};
 use webhooks::CachedWebhook;
+
+/// thread safe context
 type Context = Arc<ContextValue>;
-use dashmap::DashMap;
+
+/// inner of context
 pub struct ContextValue {
+    /// used to make http requests
     http: Client,
+    /// used to cache permissions and messages
     cache: InMemoryCache,
+    /// webhooks cache
     webhooks: DashMap<ChannelId, CachedWebhook>,
+    /// used for permissions cache
     user_id: UserId,
 }
 
@@ -79,7 +93,7 @@ async fn main() -> Result<()> {
 
     while let Some((_, event)) = events.next().await {
         ctx.cache.update(&event);
-        tokio::spawn(events::handle(ctx.clone(), event));
+        tokio::spawn(events::handle(Arc::clone(&ctx), event));
     }
 
     Ok(())

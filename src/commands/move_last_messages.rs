@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_model::{
     application::interaction::{application_command::InteractionChannel, ApplicationCommand},
@@ -8,18 +8,21 @@ use twilight_model::{
 
 use crate::{webhooks, Context};
 
+/// `move_last_messages` command struct for `twilight_interactions`
 #[derive(CreateCommand, CommandModel)]
 #[command(
     name = "move_last_messages",
     desc = "move the newest messages from this channel to another channel"
 )]
 pub struct MoveLastMessages {
+    /// the number of messages to move
     #[command(
         desc = "how many of the newest messages do you want to move?",
         min_value = 1,
         max_value = 20
     )]
     message_count: i64,
+    /// the target channel
     #[command(
         desc = "where do you want to move the messages?",
         channel_types = "guild_text guild_public_thread guild_private_thread"
@@ -27,18 +30,22 @@ pub struct MoveLastMessages {
     channel: InteractionChannel,
 }
 
+/// run the command
 pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl Into<&'a str>> {
     let command_channel_id = command.channel_id;
-    let command_member = command.member.unwrap();
-    let command_member_id = command_member.user.unwrap().id;
+    let command_member = command.member.context("command is not run in a guild")?;
+    let command_member_id = command_member
+        .user
+        .context("the member object is attached to MESSAGE_CREATE or MESSAGE_UPDATE events")?
+        .id;
     let command_member_can_manage_messages = command_member
         .permissions
-        .unwrap()
+        .context("the member object is not attached to an interaction")?
         .contains(Permissions::MANAGE_MESSAGES);
 
     let options = MoveLastMessages::from_interaction(command.data.into())?;
     let target_channel_id = options.channel.id;
-    let message_count = options.message_count;
+    let message_count: u8 = options.message_count.try_into()?;
 
     let permissions_cache = ctx.cache.permissions();
     if !(permissions_cache
@@ -59,10 +66,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
     let message_ids = ctx
         .cache
         .channel_messages(command_channel_id)
-        .map(|ids| {
-            ids.take(message_count as usize)
-                .collect::<Box<[MessageId]>>()
-        })
+        .map(|ids| ids.take(message_count.into()).collect::<Box<[MessageId]>>())
         .unwrap_or_default();
 
     if message_ids.is_empty() {
@@ -70,7 +74,10 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
     };
 
     for message_id in message_ids.iter().rev() {
-        let message = ctx.cache.message(*message_id).unwrap();
+        let message = ctx
+            .cache
+            .message(*message_id)
+            .context("message is not cached")?;
         let author_id = message.author();
 
         if author_id != command_member_id && !command_member_can_manage_messages {
@@ -80,8 +87,13 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
             );
         }
 
-        let author_member = message.member().unwrap();
-        let author_user = ctx.cache.user(author_id).unwrap();
+        let author_member = message
+            .member()
+            .context("cached message doesn't have a member")?;
+        let author_user = ctx
+            .cache
+            .user(author_id)
+            .context("message author user is not cached")?;
 
         let webhook_exec = ctx
             .http
@@ -89,7 +101,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
             .content(message.content())
             .username(author_member.nick.as_ref().unwrap_or(&author_user.name));
 
-        if let Some(avatar) = &author_user.avatar {
+        if let Some(ref avatar) = author_user.avatar {
             webhook_exec
                 .avatar_url(&format!(
                     "https://cdn.discordapp.com/avatars/{}/{}.png",
@@ -104,7 +116,10 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
 
     if message_ids.len() == 1 {
         ctx.http
-            .delete_message(command_channel_id, message_ids[0])
+            .delete_message(
+                command_channel_id,
+                *message_ids.get(0).context("message ids is empty")?,
+            )
             .exec()
             .await?;
     } else {
