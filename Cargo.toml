@@ -8,14 +8,12 @@ license = "MIT"
 tokio = { version = "1.13", features = ["macros", "rt-multi-thread"] }
 futures = { version = "0.3", default-features = false }
 twilight-gateway = { version = "0.8", default-features = false, features = [
-    "simd-json",
-    "rustls",
+    "rustls-native-roots",
     "zlib-simd",
 ] }
 twilight-http = { version = "0.8", default-features = false, features = [
     "decompression",
-    "simd-json",
-    "rustls",
+    "rustls-native-roots",
     "trust-dns",
 ] }
 twilight-util = { version = "0.8", features = ["builder"] }
