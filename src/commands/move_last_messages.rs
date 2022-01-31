@@ -3,7 +3,7 @@ use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_model::{
     application::interaction::{application_command::InteractionChannel, ApplicationCommand},
     guild::Permissions,
-    id::MessageId,
+    id::{marker::MessageMarker, Id},
 };
 
 use crate::{webhooks, Context};
@@ -66,7 +66,10 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
     let message_ids = ctx
         .cache
         .channel_messages(command_channel_id)
-        .map(|ids| ids.take(message_count.into()).collect::<Box<[MessageId]>>())
+        .map(|ids| {
+            ids.take(message_count.into())
+                .collect::<Box<[Id<MessageMarker>]>>()
+        })
         .unwrap_or_default();
 
     if message_ids.is_empty() {
@@ -98,7 +101,7 @@ pub async fn run<'a>(ctx: Context, command: ApplicationCommand) -> Result<impl I
         let webhook_exec = ctx
             .http
             .execute_webhook(webhook.id, &webhook.token)
-            .content(message.content())
+            .content(message.content())?
             .username(author_member.nick.as_ref().unwrap_or(&author_user.name));
 
         if let Some(ref avatar) = author_user.avatar {

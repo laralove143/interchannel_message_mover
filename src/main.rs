@@ -16,7 +16,10 @@ use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
-use twilight_model::id::{ChannelId, UserId};
+use twilight_model::id::{
+    marker::{ApplicationMarker, ChannelMarker, UserMarker},
+    Id,
+};
 use webhooks::CachedWebhook;
 
 /// thread safe context
@@ -29,9 +32,11 @@ pub struct ContextValue {
     /// used to cache permissions and messages
     cache: InMemoryCache,
     /// webhooks cache
-    webhooks: DashMap<ChannelId, CachedWebhook>,
+    webhooks: DashMap<Id<ChannelMarker>, CachedWebhook>,
     /// used for permissions cache
-    user_id: UserId,
+    user_id: Id<UserMarker>,
+    /// used for interaction requests and webhooks cache
+    application_id: Id<ApplicationMarker>,
 }
 
 #[tokio::main]
@@ -63,7 +68,7 @@ async fn main() -> Result<()> {
 
     let token = env::var("MOVER_BOT_TOKEN")?;
 
-    let (cluster, mut events) = Cluster::builder(&token, intents)
+    let (cluster, mut events) = Cluster::builder(token.clone(), intents)
         .event_types(event_types)
         .build()
         .await?;
@@ -71,25 +76,25 @@ async fn main() -> Result<()> {
     tokio::spawn(async move { cluster_spawn.up().await });
 
     let http = Client::new(token);
-    http.set_application_id(
-        http.current_user_application()
-            .exec()
-            .await?
-            .model()
-            .await?
-            .id,
-    );
-    commands::create(&http).await?;
 
     let ctx = Arc::new(ContextValue {
-        user_id: http.current_user().exec().await?.model().await?.id,
-        http,
         cache: InMemoryCache::builder()
             .resource_types(resource_types)
             .message_cache_size(20)
             .build(),
         webhooks: DashMap::new(),
+        user_id: http.current_user().exec().await?.model().await?.id,
+        application_id: http
+            .current_user_application()
+            .exec()
+            .await?
+            .model()
+            .await?
+            .id,
+        http,
     });
+
+    commands::create(&ctx).await?;
 
     while let Some((_, event)) = events.next().await {
         ctx.cache.update(&event);

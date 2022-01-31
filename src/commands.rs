@@ -4,7 +4,6 @@ mod move_last_messages;
 use std::{convert::Into, mem, sync::Arc};
 
 use anyhow::{anyhow, bail, Result};
-use twilight_http::Client;
 use twilight_interactions::command::CreateCommand;
 use twilight_model::{
     application::{callback::InteractionResponse, interaction::Interaction},
@@ -36,7 +35,9 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     let interaction_id = command.id;
     let token = mem::take(&mut command.token);
 
-    ctx.http
+    let client = ctx.http.interaction(ctx.application_id);
+
+    client
         .interaction_callback(
             interaction_id,
             &token,
@@ -55,12 +56,12 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     }
     .map(Into::into);
 
-    ctx.http
-        .create_followup_message(&token)?
+    client
+        .create_followup_message(&token)
         .content(result.as_ref().unwrap_or(
             &"sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix it \
               soon!",
-        ))
+        ))?
         .exec()
         .await?;
 
@@ -68,8 +69,10 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
 }
 
 /// create the commands globally
-pub async fn create(http: &Client) -> Result<()> {
-    http.set_global_commands(&[MoveLastMessages::create_command().into()])?
+pub async fn create(ctx: &Context) -> Result<()> {
+    ctx.http
+        .interaction(ctx.application_id)
+        .set_global_commands(&[MoveLastMessages::create_command().into()])
         .exec()
         .await?;
 
