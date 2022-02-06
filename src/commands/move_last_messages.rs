@@ -123,7 +123,16 @@ async fn _run<'a>(
             }
             Ok("")
         }
-        None => Ok("done! i moved the messages"),
+        None => {
+            if should_continue {
+                for webhook_exec in webhooks {
+                    webhook_exec.await?;
+                }
+                Ok("done! i moved the messages")
+            } else {
+                Ok("")
+            }
+        }
     }
 }
 
