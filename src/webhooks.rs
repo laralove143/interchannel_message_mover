@@ -1,6 +1,4 @@
-use std::fmt::{Display, Formatter};
-
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use twilight_model::{
     channel::webhook::Webhook,
     id::{
@@ -10,21 +8,6 @@ use twilight_model::{
 };
 
 use crate::Context;
-
-/// an error occured while caching a webhook
-#[derive(Debug)]
-pub enum Error {
-    /// the webhook is not an incoming webhook
-    NotIncoming,
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str("the webhook to cache is not an incoming webhook")
-    }
-}
-
-impl std::error::Error for Error {}
 
 /// a cached webhook
 #[derive(Debug)]
@@ -36,18 +19,19 @@ pub struct CachedWebhook {
 }
 
 impl TryFrom<Webhook> for CachedWebhook {
-    type Error = Error;
+    type Error = anyhow::Error;
 
-    fn try_from(webhook: Webhook) -> Result<Self, Error> {
+    fn try_from(webhook: Webhook) -> Result<Self, Self::Error> {
         Ok(Self {
             id: webhook.id,
-            token: webhook.token.ok_or(Error::NotIncoming)?,
+            token: webhook
+                .token
+                .context("the webhook is not an incoming webhook")?,
         })
     }
 }
 
-/// get a webhook from the cache, get it from the http api and cache it if not
-/// found, create a new one if that's also not found
+/// get a webhook from the cache, falling back to the http api
 pub async fn get(ctx: &Context, channel_id: Id<ChannelMarker>) -> Result<&CachedWebhook> {
     if let Some(pair) = ctx.webhooks.get(&channel_id) {
         Ok(pair.value())
@@ -78,8 +62,7 @@ pub async fn get(ctx: &Context, channel_id: Id<ChannelMarker>) -> Result<&Cached
     }
 }
 
-/// get webhooks in channel using the http api and remove the cached webhook if
-/// it's not found
+/// remove deleted webhooks from the cache
 pub async fn update(ctx: Context, channel_id: Id<ChannelMarker>) -> Result<()> {
     let cached_webhook_id = if let Some(webhook) = ctx.webhooks.get(&channel_id) {
         webhook.id
