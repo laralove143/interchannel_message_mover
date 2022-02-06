@@ -1,4 +1,5 @@
 use anyhow::{Context as _, Result};
+use dashmap::mapref::one::Ref;
 use twilight_model::{
     channel::webhook::Webhook,
     id::{
@@ -32,9 +33,12 @@ impl TryFrom<Webhook> for CachedWebhook {
 }
 
 /// get a webhook from the cache, falling back to the http api
-pub async fn get(ctx: &Context, channel_id: Id<ChannelMarker>) -> Result<&CachedWebhook> {
+pub async fn get(
+    ctx: &Context,
+    channel_id: Id<ChannelMarker>,
+) -> Result<Ref<'_, twilight_model::id::Id<ChannelMarker>, CachedWebhook>> {
     if let Some(pair) = ctx.webhooks.get(&channel_id) {
-        Ok(pair.value())
+        Ok(pair)
     } else {
         let http_application_id = ctx.application_id;
         let webhook = if let Some(webhook) = ctx
@@ -58,7 +62,10 @@ pub async fn get(ctx: &Context, channel_id: Id<ChannelMarker>) -> Result<&Cached
         };
 
         ctx.webhooks.insert(channel_id, webhook.try_into()?);
-        Ok(ctx.webhooks.get(&channel_id).unwrap().value())
+        Ok(ctx
+            .webhooks
+            .get(&channel_id)
+            .context("just inserted webhook doesn't exist")?)
     }
 }
 

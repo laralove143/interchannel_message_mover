@@ -9,7 +9,7 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-tokio = { version = "1.13", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.16", features = ["macros", "rt-multi-thread"] }
 futures = { version = "0.3", default-features = false }
 twilight-gateway = { version = "0.9", default-features = false, features = [
     "rustls-native-roots",
@@ -28,5 +28,5 @@ twilight-standby = { version = "0.9", default-features = false }
 twilight-mention = "0.9"
 twilight-model = "0.9"
 twilight-interactions = "0.9"
-dashmap = "5.0"
+dashmap = "5.1"
 anyhow = "1.0"

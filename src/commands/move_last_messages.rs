@@ -95,7 +95,7 @@ async fn _run<'a>(
     };
     let messages = get_messages(&ctx, &message_ids)?;
 
-    let webhooks = make_webhooks(&ctx, webhook, &messages)?;
+    let webhooks = make_webhooks(&ctx, &webhook, &messages)?;
 
     let (should_continue, agree_message_id) = should_continue(
         &ctx,
