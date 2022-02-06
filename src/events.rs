@@ -1,15 +1,46 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use twilight_gateway::{Cluster, Event};
+use twilight_http::Client;
 use twilight_model::gateway::payload::outgoing::RequestGuildMembers;
 
 use crate::{commands, webhooks, Context};
 
-/// handles the event, prints the returned error to stderr
+/// handles the event, prints the returned error to stderr and tells the owner
 #[allow(clippy::print_stderr)]
 pub async fn handle(ctx: Context, event: Event) {
-    if let Err(err) = _handle(ctx, event).await {
+    if let Err(err) = _handle(Arc::clone(&ctx), event).await {
+        if let Err(inform_error) = inform_owner(&ctx.http).await {
+            eprintln!("informing the owner also failed: {}", inform_error);
+        }
         eprintln!("{err}");
     }
+}
+
+/// tell the owner there was an error
+async fn inform_owner(http: &Client) -> Result<()> {
+    http.create_message(
+        http.create_private_channel(
+            http.current_user_application()
+                .exec()
+                .await?
+                .model()
+                .await?
+                .owner
+                .id,
+        )
+        .exec()
+        .await?
+        .model()
+        .await?
+        .id,
+    )
+    .content("an error occured :( check the stderr")?
+    .exec()
+    .await?;
+
+    Ok(())
 }
 
 /// handles the event, passing on the returned error
