@@ -14,22 +14,18 @@ use twilight_util::builder::CallbackDataBuilder;
 use self::move_last_messages::MoveLastMessages;
 use crate::Context;
 
-/// handle an interaction
-/// 1. get the inner command if it's an application command, return an error
-/// otherwise 2. copy and save the `interaction_id`
-/// 3. mutate command to take and save the token
-/// 4. defer the command with an empty response to avoid it being invalidated
-/// while processing 5. run the command and save its result
-/// 6. respond the command with result saved or the generic error message
-/// 6. return the saved error, if any
+/// handle an interaction passing the returned error
+#[allow(clippy::wildcard_enum_match_arm)]
 pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
-    let mut command = if let Interaction::ApplicationCommand(command) = interaction {
-        *command
-    } else {
-        bail!(
-            "interaction is not an application command: {:?}",
-            interaction
-        );
+    let mut command = match interaction {
+        Interaction::ApplicationCommand(command) => *command,
+        Interaction::MessageComponent(_) => return Ok(()),
+        _ => {
+            bail!(
+                "interaction is not an application command: {:?}",
+                interaction
+            );
+        }
     };
 
     let interaction_id = command.id;
@@ -50,22 +46,24 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         .exec()
         .await?;
 
-    let result = match command.data.name.as_ref() {
-        "move_last_messages" => move_last_messages::run(Arc::clone(&ctx), command).await,
+    if let Err(err) = match command.data.name.as_ref() {
+        "move_last_messages" => {
+            move_last_messages::run(Arc::clone(&ctx), &client, &token, command).await
+        }
         _ => Err(anyhow!("unexpected command name: {}", command.data.name)),
-    }
-    .map(Into::into);
+    } {
+        client
+            .update_interaction_original(&token)
+            .content(Some(
+                "sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix \
+                 it soon!",
+            ))?
+            .exec()
+            .await?;
+        bail!(err);
+    };
 
-    client
-        .create_followup_message(&token)
-        .content(result.as_ref().unwrap_or(
-            &"sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix it \
-              soon!",
-        ))?
-        .exec()
-        .await?;
-
-    result.map(|_| ())
+    Ok(())
 }
 
 /// create the commands globally
