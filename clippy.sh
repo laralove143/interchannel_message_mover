@@ -1,0 +1,1 @@
+cargo clippy -- -W clippy::cargo -W clippy::nursery -W clippy::pedantic -W clippy::restriction
