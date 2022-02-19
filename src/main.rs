@@ -9,7 +9,7 @@
 
 /// interaction commands
 mod commands;
-/// event hander
+/// event handler
 mod events;
 /// webhooks cache
 mod webhooks;

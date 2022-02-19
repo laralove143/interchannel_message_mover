@@ -36,7 +36,7 @@ async fn inform_owner(http: &Client) -> Result<()> {
         .await?
         .id,
     )
-    .content("an error occured :( check the stderr")?
+    .content("an error occurred :( check the stderr")?
     .exec()
     .await?;
 

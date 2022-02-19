@@ -83,7 +83,7 @@ async fn _run<'a>(
     if !has_perms(&ctx, command.channel_id, &options)? {
         return Ok(
             "**please make sure i have these permissions:**\n\nview channels\nmanage \
-             webhooks\nnsend messages\nmanage messages",
+             webhooks\nsend messages\nmanage messages",
         );
     };
 
