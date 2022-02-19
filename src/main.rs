@@ -1,6 +1,7 @@
 //! "a simple discord bot to move messages between channels"
-// TODO! check docs
+#![warn(clippy::cargo, clippy::nursery, clippy::pedantic, clippy::restriction)]
 #![allow(
+    clippy::blanket_clippy_restriction_lints,
     clippy::shadow_same,
     clippy::implicit_return,
     clippy::unseparated_literal_suffix,
