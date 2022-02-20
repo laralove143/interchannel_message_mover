@@ -1,5 +1,5 @@
 # interchannel message mover
-[![add it to your server - invite](https://img.shields.io/badge/add_it_to_your_server-invite-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/oauth2/authorize?client_id=925836652558057552&permissions=536880128&scope=bot%20applications.commands)  
+[![add it to your server - invite](https://img.shields.io/badge/add_it_to_your_server-invite-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/api/oauth2/authorize?client_id=925836652558057552&permissions=671091712&scope=bot%20applications.commands)  
 [![talk to me - join server](https://img.shields.io/badge/talk_to_me-join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/RQhskPjrGv)
 
 imagine you're depressed and you vent.. but then you realize you did it in #general.. or imagine people in your server talk about anime in the #games channel.. unacceptable! and you have to copy every message to the right channel and delete the messages and all.. doesn't it get tiring?
