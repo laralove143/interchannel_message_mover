@@ -55,17 +55,18 @@ async fn _handle(ctx: Context, event: Event) -> Result<()> {
 }
 
 /// if the event is a guild create event, sends the shard a command to request
-/// the members and prints a message
-#[allow(clippy::print_stdout)]
-pub async fn request_members(cluster: &Cluster, shard_id: u64, event: &Event) -> Result<()> {
+/// the members, prints to stderr if it fails
+#[allow(clippy::print_stderr)]
+pub async fn request_members(cluster: &Cluster, shard_id: u64, event: &Event) {
     if let Event::GuildCreate(guild) = event {
-        cluster
+        if let Err(err) = cluster
             .command(
                 shard_id,
                 &RequestGuildMembers::builder(guild.id).query("", None),
             )
-            .await?;
-        println!("requested members");
+            .await
+        {
+            eprintln!("{err}");
+        }
     };
-    Ok(())
 }
