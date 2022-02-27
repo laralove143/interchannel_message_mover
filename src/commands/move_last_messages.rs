@@ -140,6 +140,7 @@ async fn _run<'a>(
                 for webhook_exec in webhooks {
                     webhook_exec.await?;
                 }
+                delete_messages(&ctx, &message_ids, command.channel_id).await?;
                 Ok("done! i moved the messages")
             } else {
                 Ok("")
