@@ -89,7 +89,7 @@ async fn _run<'a>(
 
     let webhook = webhooks::get(&ctx, options.channel.id).await?;
 
-    let mut message_ids = match get_message_ids(&ctx, options.channel.id, message_count) {
+    let mut message_ids = match get_message_ids(&ctx, command.channel_id, message_count) {
         Some(ids) => ids,
         None => return Ok("i can only move messages that are sent after i joined >.<"),
     };
