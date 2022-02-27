@@ -93,6 +93,12 @@ async fn main() -> Result<()> {
         | EventTypeFlags::CHANNEL_CREATE
         | EventTypeFlags::CHANNEL_UPDATE
         | EventTypeFlags::CHANNEL_DELETE
+        | EventTypeFlags::THREAD_CREATE
+        | EventTypeFlags::THREAD_DELETE
+        | EventTypeFlags::THREAD_UPDATE
+        | EventTypeFlags::THREAD_LIST_SYNC
+        | EventTypeFlags::THREAD_MEMBER_UPDATE
+        | EventTypeFlags::THREAD_MEMBERS_UPDATE
         | EventTypeFlags::MEMBER_ADD
         | EventTypeFlags::MEMBER_UPDATE
         | EventTypeFlags::MEMBER_REMOVE

@@ -9,6 +9,7 @@ use twilight_http::{
 };
 use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_mention::Mention;
+use twilight_model::channel::ChannelType;
 use twilight_model::{
     application::{
         callback::InteractionResponse,
@@ -79,6 +80,17 @@ async fn _run<'a>(
 ) -> Result<&'static str> {
     let options = MoveLastMessages::from_interaction(command.data.into())?;
     let message_count: usize = options.message_count.try_into()?;
+
+    if options.channel.kind != ChannelType::GuildText
+        || ctx
+            .cache
+            .guild_channel(command.channel_id)
+            .context("command channel is not cached")?
+            .kind()
+            != ChannelType::GuildText
+    {
+        return Ok("i can only work in normal text channels in servers for now.. sorry!");
+    }
 
     if !has_perms(&ctx, command.channel_id, &options)? {
         return Ok(
