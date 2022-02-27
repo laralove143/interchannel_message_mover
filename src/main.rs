@@ -120,7 +120,7 @@ async fn main() -> Result<()> {
     while let Some((shard_id, event)) = events.next().await {
         ctx.standby.process(&event);
         ctx.cache.update(&event);
-        events::request_members(&cluster, shard_id, &event).await?;
+        events::request_members(&cluster, shard_id, &event).await;
         tokio::spawn(events::handle(Arc::clone(&ctx), event));
     }
 
