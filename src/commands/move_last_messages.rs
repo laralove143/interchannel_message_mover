@@ -368,12 +368,17 @@ fn get_message_ids(
     command_channel_id: Id<ChannelMarker>,
     message_count: usize,
 ) -> Option<Vec<Id<MessageMarker>>> {
-    Some(
-        ctx.cache
-            .channel_messages(command_channel_id)?
-            .take(message_count)
-            .collect(),
-    )
+    let ids: Vec<Id<MessageMarker>> = ctx
+        .cache
+        .channel_messages(command_channel_id)?
+        .take(message_count)
+        .collect();
+
+    if ids.is_empty() {
+        None
+    } else {
+        Some(ids)
+    }
 }
 
 /// get the cached messages to move from the cache, using the given message ids
