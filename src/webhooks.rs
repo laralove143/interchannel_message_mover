@@ -54,7 +54,7 @@ pub async fn get(
             webhook
         } else {
             ctx.http
-                .create_webhook(channel_id, "message highway")
+                .create_webhook(channel_id, "message highway")?
                 .exec()
                 .await?
                 .model()

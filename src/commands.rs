@@ -6,10 +6,11 @@ use std::{convert::Into, mem, sync::Arc};
 use anyhow::{anyhow, bail, Result};
 use twilight_interactions::command::CreateCommand;
 use twilight_model::{
-    application::{callback::InteractionResponse, interaction::Interaction},
+    application::interaction::Interaction,
     channel::message::MessageFlags,
+    http::interaction::{InteractionResponse, InteractionResponseType},
 };
-use twilight_util::builder::CallbackDataBuilder;
+use twilight_util::builder::InteractionResponseDataBuilder;
 
 use self::move_last_messages::MoveLastMessages;
 use crate::Context;
@@ -34,14 +35,17 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
     let client = ctx.http.interaction(ctx.application_id);
 
     client
-        .interaction_callback(
+        .create_response(
             interaction_id,
             &token,
-            &InteractionResponse::DeferredChannelMessageWithSource(
-                CallbackDataBuilder::new()
-                    .flags(MessageFlags::EPHEMERAL)
-                    .build(),
-            ),
+            &InteractionResponse {
+                kind: InteractionResponseType::DeferredChannelMessageWithSource,
+                data: Some(
+                    InteractionResponseDataBuilder::new()
+                        .flags(MessageFlags::EPHEMERAL)
+                        .build(),
+                ),
+            },
         )
         .exec()
         .await?;
@@ -53,7 +57,7 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         _ => Err(anyhow!("unexpected command name: {}", command.data.name)),
     } {
         client
-            .update_interaction_original(&token)
+            .update_response(&token)
             .content(Some(
                 "sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix \
                  it soon!",

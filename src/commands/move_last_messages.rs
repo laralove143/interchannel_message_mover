@@ -9,23 +9,23 @@ use twilight_http::{
 };
 use twilight_interactions::command::{CommandModel, CreateCommand};
 use twilight_mention::Mention;
-use twilight_model::channel::ChannelType;
 use twilight_model::{
     application::{
-        callback::InteractionResponse,
         component::{button::ButtonStyle, ActionRow, Button, Component},
         interaction::{
             application_command::InteractionChannel, ApplicationCommand,
             MessageComponentInteraction,
         },
     },
+    channel::ChannelType,
     guild::{PartialMember, Permissions},
+    http::interaction::{InteractionResponse, InteractionResponseType},
     id::{
         marker::{ChannelMarker, MessageMarker, UserMarker},
         Id,
     },
 };
-use twilight_util::builder::CallbackDataBuilder;
+use twilight_util::builder::InteractionResponseDataBuilder;
 
 use crate::{webhooks, Context};
 
@@ -52,9 +52,9 @@ pub struct MoveLastMessages {
 }
 
 /// run the command, responding with the returned reply
-pub async fn run<'a>(
+pub async fn run<'client>(
     ctx: Context,
-    client: &'a InteractionClient<'a>,
+    client: &'client InteractionClient<'client>,
     token: &str,
     command: ApplicationCommand,
 ) -> Result<()> {
@@ -62,7 +62,7 @@ pub async fn run<'a>(
 
     if !reply.is_empty() {
         client
-            .update_interaction_original(token)
+            .update_response(token)
             .content(Some(reply))?
             .exec()
             .await?;
@@ -72,10 +72,10 @@ pub async fn run<'a>(
 }
 
 /// run the command, returning the reply to respond with
-async fn _run<'a>(
+async fn _run<'client>(
     ctx: Context,
-    client: &'a InteractionClient<'a>,
-    token: &'a str,
+    client: &'client InteractionClient<'client>,
+    token: &'client str,
     command: ApplicationCommand,
 ) -> Result<&'static str> {
     let options = MoveLastMessages::from_interaction(command.data.into())?;
@@ -84,9 +84,9 @@ async fn _run<'a>(
     if options.channel.kind != ChannelType::GuildText
         || ctx
             .cache
-            .guild_channel(command.channel_id)
+            .channel(command.channel_id)
             .context("command channel is not cached")?
-            .kind()
+            .kind
             != ChannelType::GuildText
     {
         return Ok("i can only work in normal text channels in servers for now.. sorry!");
@@ -167,10 +167,10 @@ fn has_perms(
 }
 
 /// return the `ExecuteWebhook`s to be executed if the move should continue
-fn make_webhooks<'a>(
-    ctx: &'a Context,
-    webhook: &'a webhooks::CachedWebhook,
-    messages: &[Reference<'a, Id<MessageMarker>, CachedMessage>],
+fn make_webhooks<'ctx>(
+    ctx: &'ctx Context,
+    webhook: &'ctx webhooks::CachedWebhook,
+    messages: &[Reference<'ctx, Id<MessageMarker>, CachedMessage>],
 ) -> Result<Vec<ResponseFuture<EmptyBody>>> {
     let mut webhooks = Vec::with_capacity(messages.len());
 
@@ -196,7 +196,7 @@ fn make_webhooks<'a>(
             .http
             .execute_webhook(webhook.id, &webhook.token)
             .content(content)?
-            .username(author_member.nick.as_ref().unwrap_or(&author_user.name));
+            .username(author_member.nick.as_ref().unwrap_or(&author_user.name))?;
         if let Some(avatar) = &author_member.avatar.or(author_user.avatar) {
             webhooks.push(
                 webhook_exec
@@ -218,10 +218,10 @@ fn make_webhooks<'a>(
 /// the messages isn't theirs, sends the agree message, waits until everyone
 /// agrees, and returns whether the move should be done and the id of the agree
 /// message, otherwise returns `true`
-async fn should_continue<'a>(
+async fn should_continue<'client>(
     ctx: &Context,
-    client: &'a InteractionClient<'a>,
-    token: &'a str,
+    client: &'client InteractionClient<'client>,
+    token: &'client str,
     author: PartialMember,
     command_channel_id: Id<ChannelMarker>,
     messages: &[Reference<'_, Id<MessageMarker>, CachedMessage>],
@@ -278,7 +278,7 @@ async fn should_continue<'a>(
         .id;
 
     client
-        .update_interaction_original(token)
+        .update_response(token)
         .content(Some(
             "i'll wait until everyone agrees, if the message with the buttons is deleted, that \
              means someone refused...",
@@ -310,15 +310,18 @@ async fn should_continue<'a>(
                 }
 
                 client
-                    .interaction_callback(
+                    .create_response(
                         component.id,
                         &component.token,
-                        &InteractionResponse::UpdateMessage(
-                            CallbackDataBuilder::new()
-                                .content(get_agree_message_content(&agree_waiting)?)
-                                .components(message_components.clone())
-                                .build(),
-                        ),
+                        &InteractionResponse {
+                            kind: InteractionResponseType::UpdateMessage,
+                            data: Some(
+                                InteractionResponseDataBuilder::new()
+                                    .content(get_agree_message_content(&agree_waiting)?)
+                                    .components(message_components.clone())
+                                    .build(),
+                            ),
+                        },
                     )
                     .exec()
                     .await?;
@@ -382,10 +385,10 @@ fn get_message_ids(
 }
 
 /// get the cached messages to move from the cache, using the given message ids
-fn get_messages<'a>(
-    ctx: &'a Context,
+fn get_messages<'ctx>(
+    ctx: &'ctx Context,
     message_ids: &[Id<MessageMarker>],
-) -> Result<Vec<Reference<'a, Id<MessageMarker>, CachedMessage>>> {
+) -> Result<Vec<Reference<'ctx, Id<MessageMarker>, CachedMessage>>> {
     let mut messages = Vec::with_capacity(message_ids.len());
 
     for message_id in message_ids {

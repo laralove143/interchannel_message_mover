@@ -11,22 +11,22 @@ license = "MIT"
 [dependencies]
 tokio = { version = "1.16", features = ["macros", "rt-multi-thread"] }
 futures = { version = "0.3", default-features = false }
-twilight-gateway = { version = "0.9", default-features = false, features = [
+twilight-gateway = { version = "0.11", default-features = false, features = [
     "rustls-native-roots",
     "zlib-simd",
 ] }
-twilight-http = { version = "0.9", default-features = false, features = [
+twilight-http = { version = "0.11", default-features = false, features = [
     "decompression",
     "rustls-native-roots",
     "trust-dns",
 ] }
-twilight-util = { version = "0.9", features = ["builder"] }
-twilight-cache-inmemory = { version = "0.9", features = [
+twilight-util = { version = "0.11", features = ["builder"] }
+twilight-cache-inmemory = { version = "0.11", features = [
     "permission-calculator",
 ] }
-twilight-standby = { version = "0.9", default-features = false }
-twilight-mention = "0.9"
-twilight-model = "0.9"
-twilight-interactions = "0.9"
+twilight-standby = { version = "0.11", default-features = false }
+twilight-mention = "0.11"
+twilight-model = "0.11"
+twilight-interactions = "0.11"
 dashmap = "5.1"
 anyhow = "1.0"
