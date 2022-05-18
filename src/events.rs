@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context as _, Result};
+use anyhow::{IntoResult, Result};
 use twilight_gateway::{Cluster, Event};
 use twilight_http::Client;
 use twilight_model::gateway::payload::outgoing::RequestGuildMembers;
@@ -28,7 +28,7 @@ async fn inform_owner(http: &Client) -> Result<()> {
                 .model()
                 .await?
                 .owner
-                .context("current user application owner is none")?
+                .ok()?
                 .id,
         )
         .exec()

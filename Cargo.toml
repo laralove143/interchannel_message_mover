@@ -29,4 +29,4 @@ twilight-mention = "0.11"
 twilight-model = "0.11"
 twilight-interactions = "0.11"
 dashmap = "5.1"
-anyhow = "1.0"
+anyhow = { git = "https://github.com/laralove143/anyhow" }

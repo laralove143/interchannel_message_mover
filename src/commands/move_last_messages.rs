@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use anyhow::{bail, Context as _, Result};
+use anyhow::{bail, IntoResult, Result};
 use futures::StreamExt;
 use twilight_cache_inmemory::{model::CachedMessage, Reference};
 use twilight_http::{
@@ -82,12 +82,7 @@ async fn _run<'client>(
     let message_count: usize = options.message_count.try_into()?;
 
     if options.channel.kind != ChannelType::GuildText
-        || ctx
-            .cache
-            .channel(command.channel_id)
-            .context("command channel is not cached")?
-            .kind
-            != ChannelType::GuildText
+        || ctx.cache.channel(command.channel_id).ok()?.kind != ChannelType::GuildText
     {
         return Ok("i can only work in normal text channels in servers for now.. sorry!");
     }
@@ -113,7 +108,7 @@ async fn _run<'client>(
         &ctx,
         client,
         token,
-        command.member.context("command member is none")?,
+        command.member.ok()?,
         command.channel_id,
         &messages,
     )
@@ -184,13 +179,8 @@ fn make_webhooks<'ctx>(
             continue;
         }
 
-        let author_member = message
-            .member()
-            .context("cached message doesn't have a member")?;
-        let author_user = ctx
-            .cache
-            .user(message.author())
-            .context("message author user is not cached")?;
+        let author_member = message.member().ok()?;
+        let author_user = ctx.cache.user(message.author()).ok()?;
 
         let webhook_exec = ctx
             .http
@@ -226,14 +216,11 @@ async fn should_continue<'client>(
     command_channel_id: Id<ChannelMarker>,
     messages: &[Reference<'_, Id<MessageMarker>, CachedMessage>],
 ) -> Result<(bool, Option<Id<MessageMarker>>)> {
-    let author_id = author
-        .user
-        .context("the member object is attached to MESSAGE_CREATE or MESSAGE_UPDATE events")?
-        .id;
+    let author_id = author.user.ok()?.id;
 
     if author
         .permissions
-        .context("the member object is not attached to an interaction")?
+        .ok()?
         .contains(Permissions::MANAGE_MESSAGES)
     {
         return Ok((true, None));
@@ -295,9 +282,7 @@ async fn should_continue<'client>(
     );
 
     while let Some(component) = components.next().await {
-        let agreed_author_id = component
-            .author_id()
-            .context("component author id is none")?;
+        let agreed_author_id = component.author_id().ok()?;
 
         match component.data.custom_id.as_ref() {
             "agree" => {
@@ -392,10 +377,7 @@ fn get_messages<'ctx>(
     let mut messages = Vec::with_capacity(message_ids.len());
 
     for message_id in message_ids {
-        let message = ctx
-            .cache
-            .message(*message_id)
-            .context("message is not cached")?;
+        let message = ctx.cache.message(*message_id).ok()?;
         if message.webhook_id().is_none() {
             messages.push(message);
         }
@@ -412,10 +394,7 @@ async fn delete_messages(
 ) -> Result<()> {
     if message_ids.len() == 1 {
         ctx.http
-            .delete_message(
-                command_channel_id,
-                *message_ids.get(0).context("message ids is empty")?,
-            )
+            .delete_message(command_channel_id, *message_ids.get(0).ok()?)
             .exec()
             .await?;
     } else {

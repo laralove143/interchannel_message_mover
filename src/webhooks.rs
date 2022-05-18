@@ -1,4 +1,4 @@
-use anyhow::{Context as _, Result};
+use anyhow::{IntoResult, Result};
 use dashmap::mapref::one::Ref;
 use twilight_model::{
     channel::webhook::Webhook,
@@ -25,9 +25,7 @@ impl TryFrom<Webhook> for CachedWebhook {
     fn try_from(webhook: Webhook) -> Result<Self, Self::Error> {
         Ok(Self {
             id: webhook.id,
-            token: webhook
-                .token
-                .context("the webhook is not an incoming webhook")?,
+            token: webhook.token.ok()?,
         })
     }
 }
@@ -62,10 +60,7 @@ pub async fn get(
         };
 
         ctx.webhooks.insert(channel_id, webhook.try_into()?);
-        Ok(ctx
-            .webhooks
-            .get(&channel_id)
-            .context("just inserted webhook doesn't exist")?)
+        Ok(ctx.webhooks.get(&channel_id).ok()?)
     }
 }
 
