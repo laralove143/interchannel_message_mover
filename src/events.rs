@@ -5,7 +5,7 @@ use twilight_gateway::{Cluster, Event};
 use twilight_http::Client;
 use twilight_model::gateway::payload::outgoing::RequestGuildMembers;
 
-use crate::{commands, webhooks, Context};
+use crate::{commands, Context};
 
 /// handles the event, prints the returned error to stderr and tells the owner
 #[allow(clippy::print_stderr)]
@@ -49,7 +49,17 @@ async fn inform_owner(http: &Client) -> Result<()> {
 async fn _handle(ctx: Context, event: Event) -> Result<()> {
     match event {
         Event::InteractionCreate(interaction) => commands::handle(ctx, interaction.0).await?,
-        Event::WebhooksUpdate(update) => webhooks::update(ctx, update.channel_id).await?,
+        Event::WebhooksUpdate(update) => {
+            ctx.webhooks
+                .validate(
+                    &ctx.http,
+                    update.channel_id,
+                    ctx.cache
+                        .permissions()
+                        .in_channel(ctx.user_id, update.channel_id)?,
+                )
+                .await?;
+        }
         _ => (),
     }
     Ok(())

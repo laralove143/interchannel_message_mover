@@ -17,7 +17,7 @@ use twilight_model::{
             MessageComponentInteraction,
         },
     },
-    channel::ChannelType,
+    channel::{ChannelType, Webhook},
     guild::{PartialMember, Permissions},
     http::interaction::{InteractionResponse, InteractionResponseType},
     id::{
@@ -27,7 +27,7 @@ use twilight_model::{
 };
 use twilight_util::builder::InteractionResponseDataBuilder;
 
-use crate::{webhooks, Context};
+use crate::Context;
 
 /// `move_last_messages` command struct for `twilight_interactions`
 #[derive(CreateCommand, CommandModel)]
@@ -94,7 +94,10 @@ async fn _run<'client>(
         );
     };
 
-    let webhook = webhooks::get(&ctx, options.channel.id).await?;
+    let webhook = ctx
+        .webhooks
+        .get_infallible(&ctx.http, options.channel.id, "message highway")
+        .await?;
 
     let mut message_ids = match get_message_ids(&ctx, command.channel_id, message_count) {
         Some(ids) => ids,
@@ -164,7 +167,7 @@ fn has_perms(
 /// return the `ExecuteWebhook`s to be executed if the move should continue
 fn make_webhooks<'ctx>(
     ctx: &'ctx Context,
-    webhook: &'ctx webhooks::CachedWebhook,
+    webhook: &'ctx Webhook,
     messages: &[Reference<'ctx, Id<MessageMarker>, CachedMessage>],
 ) -> Result<Vec<ResponseFuture<EmptyBody>>> {
     let mut webhooks = Vec::with_capacity(messages.len());
@@ -184,7 +187,7 @@ fn make_webhooks<'ctx>(
 
         let webhook_exec = ctx
             .http
-            .execute_webhook(webhook.id, &webhook.token)
+            .execute_webhook(webhook.id, webhook.token.as_ref().ok()?)
             .content(content)?
             .username(author_member.nick.as_ref().unwrap_or(&author_user.name))?;
         if let Some(avatar) = &author_member.avatar.or(author_user.avatar) {

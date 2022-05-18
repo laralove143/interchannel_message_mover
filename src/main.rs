@@ -12,23 +12,20 @@
 mod commands;
 /// event handler
 mod events;
-/// webhooks cache
-mod webhooks;
 
 use std::{env, sync::Arc};
 
 use anyhow::Result;
-use dashmap::DashMap;
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
 use twilight_model::id::{
-    marker::{ApplicationMarker, ChannelMarker, UserMarker},
+    marker::{ApplicationMarker, UserMarker},
     Id,
 };
 use twilight_standby::Standby;
-use webhooks::CachedWebhook;
+use twilight_webhook::cache::Cache as WebhooksCache;
 
 /// thread safe context
 type Context = Arc<ContextValue>;
@@ -42,7 +39,7 @@ pub struct ContextValue {
     /// used to cache permissions and messages
     cache: InMemoryCache,
     /// webhooks cache
-    webhooks: DashMap<Id<ChannelMarker>, CachedWebhook>,
+    webhooks: WebhooksCache,
     /// used for permissions cache
     user_id: Id<UserMarker>,
     /// used for interaction requests and webhooks cache
@@ -58,7 +55,7 @@ impl ContextValue {
                 .resource_types(resource_types)
                 .message_cache_size(20)
                 .build(),
-            webhooks: DashMap::new(),
+            webhooks: WebhooksCache::new(),
             user_id: http.current_user().exec().await?.model().await?.id,
             application_id: http
                 .current_user_application()
@@ -126,6 +123,7 @@ async fn main() -> Result<()> {
     while let Some((shard_id, event)) = events.next().await {
         ctx.standby.process(&event);
         ctx.cache.update(&event);
+        ctx.webhooks.update(&event);
         events::request_members(&cluster, shard_id, &event).await;
         tokio::spawn(events::handle(Arc::clone(&ctx), event));
     }
