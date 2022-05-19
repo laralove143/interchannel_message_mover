@@ -13,9 +13,9 @@ mod commands;
 /// event handler
 mod events;
 
-use std::{env, sync::Arc};
+use std::{env, path::PathBuf, sync::Arc};
 
-use anyhow::Result;
+use anyhow::{IntoResult, Result};
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_error::ErrorHandler;
@@ -52,16 +52,22 @@ pub struct ContextValue {
 impl ContextValue {
     /// creates a new context value:
     async fn new(resource_types: ResourceType, http: Client) -> Result<Self> {
-        let user_id = http.current_user().exec().await?.model().await?.id;
         let mut error_handler = ErrorHandler::new();
+        let application = http
+            .current_user_application()
+            .exec()
+            .await?
+            .model()
+            .await?;
         error_handler.channel(
-            http.create_private_channel(user_id)
+            http.create_private_channel(application.owner.ok()?.id)
                 .exec()
                 .await?
                 .model()
                 .await?
                 .id,
         );
+        error_handler.file(PathBuf::from("error.txt".to_owned()));
         Ok(Self {
             standby: Standby::new(),
             cache: InMemoryCache::builder()
@@ -70,14 +76,8 @@ impl ContextValue {
                 .build(),
             webhooks: WebhooksCache::new(),
             error_handler,
-            user_id,
-            application_id: http
-                .current_user_application()
-                .exec()
-                .await?
-                .model()
-                .await?
-                .id,
+            user_id: http.current_user().exec().await?.model().await?.id,
+            application_id: application.id,
             http,
         })
     }
