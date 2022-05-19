@@ -18,6 +18,7 @@ use std::{env, sync::Arc};
 use anyhow::Result;
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
+use twilight_error::ErrorHandler;
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
 use twilight_model::id::{
@@ -40,6 +41,8 @@ pub struct ContextValue {
     cache: InMemoryCache,
     /// webhooks cache
     webhooks: WebhooksCache,
+    /// error handler
+    error_handler: ErrorHandler,
     /// used for permissions cache
     user_id: Id<UserMarker>,
     /// used for interaction requests and webhooks cache
@@ -49,6 +52,16 @@ pub struct ContextValue {
 impl ContextValue {
     /// creates a new context value:
     async fn new(resource_types: ResourceType, http: Client) -> Result<Self> {
+        let user_id = http.current_user().exec().await?.model().await?.id;
+        let mut error_handler = ErrorHandler::new();
+        error_handler.channel(
+            http.create_private_channel(user_id)
+                .exec()
+                .await?
+                .model()
+                .await?
+                .id,
+        );
         Ok(Self {
             standby: Standby::new(),
             cache: InMemoryCache::builder()
@@ -56,7 +69,8 @@ impl ContextValue {
                 .message_cache_size(20)
                 .build(),
             webhooks: WebhooksCache::new(),
-            user_id: http.current_user().exec().await?.model().await?.id,
+            error_handler,
+            user_id,
             application_id: http
                 .current_user_application()
                 .exec()
@@ -124,7 +138,7 @@ async fn main() -> Result<()> {
         ctx.standby.process(&event);
         ctx.cache.update(&event);
         ctx.webhooks.update(&event);
-        events::request_members(&cluster, shard_id, &event).await;
+        events::request_members(&ctx, &cluster, shard_id, &event).await;
         tokio::spawn(events::handle(Arc::clone(&ctx), event));
     }
 
