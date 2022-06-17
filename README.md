@@ -8,6 +8,8 @@ and no mods around? no problem, as long as everyone in the conversation agrees t
 
 ![example](example.gif)
 
+*due to discord limitations, the bot can't move messages that were sent before it joined, sorry*
+
 ## nerdy stuff
 made with [rust](https://www.rust-lang.org) and [twilight](https://github.com/twilight-rs/twilight)
 
