@@ -67,7 +67,7 @@ impl ContextValue {
                 .await?
                 .id,
         );
-        error_handler.file(PathBuf::from("error.txt".to_owned()));
+        error_handler.file(PathBuf::from("message_mover_bot_errors.txt".to_owned()));
         Ok(Self {
             standby: Standby::new(),
             cache: InMemoryCache::builder()
