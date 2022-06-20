@@ -101,7 +101,7 @@ async fn _run<'client>(
 
     let mut message_ids = match get_message_ids(&ctx, command.channel_id, message_count) {
         Some(ids) => ids,
-        None => return Ok("i can only move messages that are sent after i joined >.<"),
+        None => return Ok("i can only move messages that are sent after i joined"),
     };
     let messages = get_messages(&ctx, &message_ids)?;
 

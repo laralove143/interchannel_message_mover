@@ -59,7 +59,7 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         client
             .update_response(&token)
             .content(Some(
-                "sorry.. there was an error >.< i'll let my developer know, hopefully she'll fix \
+                "sorry but there was an error.. i'll let my developer know, hopefully they'll fix \
                  it soon!",
             ))?
             .exec()
