@@ -85,10 +85,7 @@ impl ContextValue {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let intents = Intents::GUILD_MESSAGES
-        | Intents::GUILDS
-        | Intents::GUILD_MEMBERS
-        | Intents::GUILD_WEBHOOKS;
+    let intents = Intents::GUILD_MESSAGES | Intents::GUILDS | Intents::GUILD_WEBHOOKS;
     let event_types = EventTypeFlags::INTERACTION_CREATE
         | EventTypeFlags::MESSAGE_CREATE
         | EventTypeFlags::MESSAGE_UPDATE
