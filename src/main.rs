@@ -26,7 +26,7 @@ use twilight_model::id::{
     Id,
 };
 use twilight_standby::Standby;
-use twilight_webhook::cache::Cache as WebhooksCache;
+use twilight_webhook::cache::WebhooksCache;
 
 /// thread safe context
 type Context = Arc<ContextValue>;
