@@ -1,3 +1,5 @@
+/// `move` message command
+mod r#move;
 /// `move_last_messages` command
 mod move_last_messages;
 
@@ -51,6 +53,7 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
         .await?;
 
     if let Err(err) = match command.data.name.as_ref() {
+        "move" => r#move::run(Arc::clone(&ctx), &client, &token, command).await,
         "move_last_messages" => {
             move_last_messages::run(Arc::clone(&ctx), &client, &token, command).await
         }
@@ -74,7 +77,7 @@ pub async fn handle(ctx: Context, interaction: Interaction) -> Result<()> {
 pub async fn create(ctx: &Context) -> Result<()> {
     ctx.http
         .interaction(ctx.application_id)
-        .set_global_commands(&[MoveLastMessages::create_command().into()])
+        .set_global_commands(&[MoveLastMessages::create_command().into(), r#move::build()])
         .exec()
         .await?;
 
