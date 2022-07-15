@@ -6,7 +6,7 @@ imagine you or people in your server talked about anime in the #games channel.. 
 
 and no mods around? no problem, as long as everyone in the conversation agrees to move the messages, i'll still move them
 
-![example](example.gif)
+![example](example.gif) ![example](example_message_command.gif)
 
 *due to discord limitations, the bot can't move messages that were sent before it joined, sorry*
 
