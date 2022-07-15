@@ -119,7 +119,8 @@ async fn main() -> Result<()> {
         | ResourceType::GUILD
         | ResourceType::ROLE
         | ResourceType::CHANNEL
-        | ResourceType::MEMBER;
+        | ResourceType::MEMBER
+        | ResourceType::USER;
 
     let token = env::var("MOVER_BOT_TOKEN")?;
 
