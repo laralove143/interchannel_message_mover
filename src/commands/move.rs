@@ -53,6 +53,7 @@ async fn _run<'client>(
         .ok()?;
     let member = command.member.as_ref().ok()?;
     let user = member.user.as_ref().ok()?;
+    let guild_id = command.guild_id.ok()?;
 
     if message.author.id != user.id
         && !member
@@ -71,9 +72,9 @@ async fn _run<'client>(
         );
     }
 
-    let permissions_cache = ctx.cache.permissions();
-    if !permissions_cache
-        .in_channel(ctx.user_id, command.channel_id)?
+    if !command
+        .app_permissions
+        .ok()?
         .contains(Permissions::MANAGE_MESSAGES)
     {
         return Ok("i need `manage messages` permission in this channel..");
@@ -84,7 +85,9 @@ async fn _run<'client>(
         return Ok("i can only work in normal text channels for now.. sorry!");
     }
 
-    if !permissions_cache
+    if !ctx
+        .cache
+        .permissions()
         .in_channel(ctx.user_id, target_channel.id)?
         .contains(Permissions::MANAGE_WEBHOOKS)
     {
@@ -101,10 +104,7 @@ async fn _run<'client>(
         &ctx.http,
         None,
         &MinimalMember::from_cached_member(
-            &*ctx
-                .cache
-                .member(command.guild_id.ok()?, message.author.id)
-                .ok()?,
+            &*ctx.cache.member(guild_id, message.author.id).ok()?,
             &message.author,
         ),
     )?

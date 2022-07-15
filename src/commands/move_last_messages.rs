@@ -78,6 +78,7 @@ async fn _run<'client>(
     token: &'client str,
     command: ApplicationCommand,
 ) -> Result<&'static str> {
+    let app_permissions = command.app_permissions.ok()?;
     let options = MoveLastMessages::from_interaction(command.data.into())?;
     let message_count: usize = options.message_count.try_into()?;
 
@@ -87,7 +88,7 @@ async fn _run<'client>(
         return Ok("i can only work in normal text channels in servers for now.. sorry!");
     }
 
-    if !has_perms(&ctx, command.channel_id, &options)? {
+    if !has_perms(&ctx, app_permissions, options.channel.id)? {
         return Ok(
             "**please make sure i have these permissions:**\n\nview channels\nmanage \
              webhooks\nsend messages\nmanage messages",
@@ -150,18 +151,16 @@ async fn _run<'client>(
 /// returns whether the bot has the needed permissions
 fn has_perms(
     ctx: &Context,
-    command_channel_id: Id<ChannelMarker>,
-    options: &MoveLastMessages,
+    app_permissions: Permissions,
+    target_channel_id: Id<ChannelMarker>,
 ) -> Result<bool> {
-    let permissions_cache = ctx.cache.permissions();
-    Ok(permissions_cache
-        .in_channel(ctx.user_id, command_channel_id)?
-        .contains(
-            Permissions::MANAGE_MESSAGES | Permissions::VIEW_CHANNEL | Permissions::SEND_MESSAGES,
-        )
-        && permissions_cache
-            .in_channel(ctx.user_id, options.channel.id)?
-            .contains(Permissions::MANAGE_WEBHOOKS))
+    Ok(app_permissions.contains(
+        Permissions::MANAGE_MESSAGES | Permissions::VIEW_CHANNEL | Permissions::SEND_MESSAGES,
+    ) && ctx
+        .cache
+        .permissions()
+        .in_channel(ctx.user_id, target_channel_id)?
+        .contains(Permissions::MANAGE_WEBHOOKS))
 }
 
 /// return the `ExecuteWebhook`s to be executed if the move should continue
