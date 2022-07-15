@@ -75,9 +75,9 @@ async fn _run<'client>(
     if !command
         .app_permissions
         .ok()?
-        .contains(Permissions::MANAGE_MESSAGES)
+        .contains(Permissions::MANAGE_MESSAGES | Permissions::VIEW_CHANNEL)
     {
-        return Ok("i need `manage messages` permission in this channel..");
+        return Ok("i need `manage messages` and `view channel` permission in this channel..");
     }
 
     let target_channel = select_target_channel(&ctx, client, token, &command).await?;
