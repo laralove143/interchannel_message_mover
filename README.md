@@ -25,6 +25,12 @@ to move the messages, i'll still move them
 - *"i" refers to Lara Kayaalp, the developer of interchannel message mover*
 - *"you" refers to all users of the bot*
 
+### privacy
+
+- the server members and messages are cached
+- the cached data is used only in the functionality of this bot
+- no other data is saved anywhere
+
 ### disclaimers
 
 - the webhooks the bot executes copy your message's content, nickname and avatar
