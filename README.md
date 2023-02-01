@@ -20,8 +20,23 @@ to move the messages, i'll still move them
 
 *due to discord limitations, the bot can't move messages sent before it joined, sorry..*
 
-## nerdy stuff
+## terms of service
 
-made with [rust](https://www.rust-lang.org) and [twilight](https://github.com/twilight-rs/twilight)
+- *"i" refers to Lara Kayaalp, the developer of interchannel message mover*
+- *"you" refers to all users of the bot*
 
-made by me (laralove143), licensed MIT
+### disclaimers
+
+- the webhooks the bot executes copy your message's content, nickname and avatar
+- i am not responsible for this copied data
+- i am the sole owner and developer of this bot
+- the hosted application is built directly from this repo
+
+### self-hosting
+
+These clauses override all other licenses:
+
+- *"you" refers to the self-hoster of the bot*
+- you may not advertise the self-hosted bot, such as in app directory or on websites such as top.gg
+- the self-hosted bot may not be in over 5 guilds
+- you must direct the feedback/support requests to me
