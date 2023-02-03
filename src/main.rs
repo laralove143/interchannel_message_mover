@@ -16,16 +16,21 @@ mod commands;
 /// event handler
 mod events;
 
-use std::{any::type_name, env, sync::Arc};
+use std::{any::type_name, env, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, Error, Result};
+use chrono::{TimeZone, Utc};
 use futures::StreamExt;
+use tokio::time::interval;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
-use twilight_model::id::{
-    marker::{ApplicationMarker, UserMarker},
-    Id,
+use twilight_model::{
+    gateway::{event::Event, payload::incoming::MessageDelete},
+    id::{
+        marker::{ApplicationMarker, UserMarker},
+        Id,
+    },
 };
 use twilight_standby::Standby;
 use twilight_webhook::cache::WebhooksCache;
@@ -135,6 +140,8 @@ async fn main() -> Result<()> {
 
     let ctx = Arc::new(ContextValue::new(resource_types, http).await?);
 
+    tokio::spawn(cleanup_cache(Arc::clone(&ctx)));
+
     commands::create(&ctx).await?;
 
     while let Some((shard_id, event)) = events.next().await {
@@ -146,4 +153,38 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Delete messages older than 1 month
+#[allow(clippy::arithmetic_side_effects, clippy::integer_arithmetic)]
+async fn cleanup_cache(ctx: Context) {
+    let month = Duration::from_secs(60 * 60 * 24 * 30);
+    let month_chrono = chrono::Duration::seconds(60 * 60 * 24 * 30);
+
+    let mut interval = interval(month);
+    interval.tick().await;
+    loop {
+        interval.tick().await;
+
+        let now = Utc::now();
+
+        for message in ctx.cache.iter().messages() {
+            let Some(message_time) = Utc.timestamp_opt(
+                message
+                    .edited_timestamp()
+                    .unwrap_or_else(|| message.timestamp()).as_secs(), 0,
+            ).single() else {
+                continue;
+            };
+
+            if now - message_time > month_chrono {
+                let delete_event = Event::MessageDelete(MessageDelete {
+                    channel_id: message.channel_id(),
+                    guild_id: message.guild_id(),
+                    id: message.id(),
+                });
+                ctx.cache.update(&delete_event);
+            }
+        }
+    }
 }
