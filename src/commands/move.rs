@@ -1,4 +1,4 @@
-use anyhow::{IntoResult, Result};
+use anyhow::Result;
 use twilight_cache_inmemory::Reference;
 use twilight_http::client::InteractionClient;
 use twilight_model::{
@@ -14,7 +14,7 @@ use twilight_model::{
 use twilight_util::builder::command::CommandBuilder;
 use twilight_webhook::util::{MinimalMember, MinimalWebhook};
 
-use crate::Context;
+use crate::{Context, IntoResult};
 
 /// run the command, responding with the returned reply
 pub async fn run<'client>(
@@ -174,7 +174,7 @@ async fn select_target_channel<'client>(
 
 /// get the `Command`
 pub fn build() -> Command {
-    CommandBuilder::new("move".to_owned(), "".to_owned(), CommandType::Message).build()
+    CommandBuilder::new("move".to_owned(), String::new(), CommandType::Message).build()
 }
 
 /// returns `true` if the message can't be recreated by the bot

@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use anyhow::{bail, IntoResult, Result};
+use anyhow::{bail, Result};
 use futures::StreamExt;
 use twilight_cache_inmemory::{model::CachedMessage, Reference};
 use twilight_http::{
@@ -27,7 +27,7 @@ use twilight_model::{
 };
 use twilight_util::builder::InteractionResponseDataBuilder;
 
-use crate::Context;
+use crate::{Context, IntoResult};
 
 /// `move_last_messages` command struct for `twilight_interactions`
 #[derive(CreateCommand, CommandModel)]

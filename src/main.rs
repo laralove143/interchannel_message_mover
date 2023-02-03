@@ -5,7 +5,10 @@
     clippy::shadow_same,
     clippy::implicit_return,
     clippy::unseparated_literal_suffix,
-    clippy::pattern_type_mismatch
+    clippy::pattern_type_mismatch,
+    clippy::self_named_module_files,
+    clippy::std_instead_of_alloc,
+    clippy::std_instead_of_core
 )]
 
 /// interaction commands
@@ -13,12 +16,11 @@ mod commands;
 /// event handler
 mod events;
 
-use std::{env, path::PathBuf, sync::Arc};
+use std::{any::type_name, env, sync::Arc};
 
-use anyhow::{IntoResult, Result};
+use anyhow::{anyhow, Error, Result};
 use futures::StreamExt;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
-use twilight_error::ErrorHandler;
 use twilight_gateway::{Cluster, EventTypeFlags, Intents};
 use twilight_http::Client;
 use twilight_model::id::{
@@ -31,6 +33,18 @@ use twilight_webhook::cache::WebhooksCache;
 /// thread safe context
 type Context = Arc<ContextValue>;
 
+/// Trait implemented on types that can be converted to `anyhow::Result`
+trait IntoResult<T>: Sized {
+    /// Convert a type to an `anyhow::Result`
+    fn ok(self) -> Result<T, Error>;
+}
+
+impl<T> IntoResult<T> for Option<T> {
+    fn ok(self) -> Result<T, Error> {
+        self.ok_or_else(|| anyhow!("Option<{}> is None", type_name::<T>()))
+    }
+}
+
 /// inner of context
 pub struct ContextValue {
     /// used to make http requests
@@ -41,8 +55,6 @@ pub struct ContextValue {
     cache: InMemoryCache,
     /// webhooks cache
     webhooks: WebhooksCache,
-    /// error handler
-    error_handler: ErrorHandler,
     /// used for permissions cache
     user_id: Id<UserMarker>,
     /// used for interaction requests and webhooks cache
@@ -52,22 +64,12 @@ pub struct ContextValue {
 impl ContextValue {
     /// creates a new context value:
     async fn new(resource_types: ResourceType, http: Client) -> Result<Self> {
-        let mut error_handler = ErrorHandler::new();
         let application = http
             .current_user_application()
             .exec()
             .await?
             .model()
             .await?;
-        error_handler.channel(
-            http.create_private_channel(application.owner.ok()?.id)
-                .exec()
-                .await?
-                .model()
-                .await?
-                .id,
-        );
-        error_handler.file(PathBuf::from("mover_bot_errors.txt".to_owned()));
         Ok(Self {
             standby: Standby::new(),
             cache: InMemoryCache::builder()
@@ -75,7 +77,6 @@ impl ContextValue {
                 .message_cache_size(20)
                 .build(),
             webhooks: WebhooksCache::new(),
-            error_handler,
             user_id: http.current_user().exec().await?.model().await?.id,
             application_id: application.id,
             http,
@@ -140,7 +141,7 @@ async fn main() -> Result<()> {
         ctx.standby.process(&event);
         ctx.cache.update(&event);
         ctx.webhooks.update(&event);
-        events::request_members(&ctx, &cluster, shard_id, &event).await;
+        events::request_members(&cluster, shard_id, &event).await;
         tokio::spawn(events::handle(Arc::clone(&ctx), event));
     }
 
