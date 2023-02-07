@@ -1,10 +1,7 @@
 # interchannel message mover
 
-[<img src="img/add_to_server_badge.png" height="32"/>]
-[<img src="img/join_support_server_badge.png" height="32"/>]
-
-[<img src="img/add_to_server_badge.png" height="32"/>]: https://discord.com/api/oauth2/authorize?client_id=925836652558057552&permissions=536882176&scope=bot%20applications.commands
-[<img src="img/join_support_server_badge.png" height="32"/>]: https://https://discord.gg/6vAzfFj8xG
+- [add to your server](https://discord.com/api/oauth2/authorize?client_id=925836652558057552&permissions=536882176&scope=bot%20applications.commands)
+- [get support](https://discord.gg/6vAzfFj8xG)
 
 imagine you or people in your server talked about anime in the #games channel.. unacceptable! and now you have to copy
 every message to the right channel and delete the messages and all.. even more unacceptable!
