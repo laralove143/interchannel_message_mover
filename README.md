@@ -15,9 +15,7 @@ with me you can do all that with just one command
 
 ### privacy
 
-- the server members and messages are cached
-- the cached data is used only in the functionality of this bot
-- no other data is saved anywhere
+- no data is saved anywhere
 
 ### disclaimers
 
@@ -28,7 +26,7 @@ with me you can do all that with just one command
 
 ### self-hosting
 
-These clauses override all other licenses:
+these clauses override all other licenses:
 
 - *"you" refers to the self-hoster of the bot*
 - you may not advertise the self-hosted bot, such as in app directory or on websites such as top.gg
