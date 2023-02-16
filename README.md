@@ -1,6 +1,6 @@
 # interchannel message mover
 
-- [add to your server](https://discord.com/api/oauth2/authorize?client_id=925836652558057552&permissions=536882176&scope=bot%20applications.commands)
+- [add to your server](https://discord.com/api/oauth2/authorize?client_id=925836652558057552&permissions=536945664&scope=bot%20applications.commands)
 - [get support](https://discord.gg/6vAzfFj8xG)
 
 imagine you or people in your server talked about anime in the #games channel.. unacceptable! and now you have to copy
