@@ -88,7 +88,7 @@ async fn main() -> Result<()> {
     .await?;
     bot.set_logging_format(DisplayFormat::Debug);
     bot.set_logging_channel(LOGGING_CHANNEL_ID).await?;
-    bot.set_logging_file("log.txt".to_owned());
+    bot.set_logging_file("logs.txt".to_owned());
 
     set_commands(&bot).await?;
 
