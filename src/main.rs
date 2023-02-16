@@ -32,8 +32,8 @@ const LOGGING_CHANNEL_ID: Id<ChannelMarker> = Id::new(1_002_953_459_890_397_287)
 
 const REQUIRED_PERMISSIONS: Permissions = Permissions::MANAGE_WEBHOOKS
     .union(Permissions::VIEW_CHANNEL)
-    .union(Permissions::READ_MESSAGE_HISTORY)
-    .union(Permissions::MANAGE_MESSAGES);
+    .union(Permissions::MANAGE_MESSAGES)
+    .union(Permissions::READ_MESSAGE_HISTORY);
 
 #[derive(Clone, Debug, Eq, PartialEq, thiserror::Error)]
 pub enum Error {
