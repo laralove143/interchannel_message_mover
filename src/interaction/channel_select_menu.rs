@@ -1,12 +1,13 @@
 use anyhow::Result;
 use serde::Serialize;
+use sparkle_convenience::interaction::DeferVisibility;
 use twilight_http::Response;
 use twilight_model::channel::{
     message::{component::ComponentType, MessageFlags},
     ChannelType, Message,
 };
 
-use crate::Context;
+use crate::interaction::InteractionContext;
 
 const CHANNEL_SELECT_MENU_TYPE: u8 = 8;
 
@@ -42,17 +43,16 @@ struct InteractionResponse {
     components: Vec<ActionRow>,
 }
 
-impl Context {
+impl InteractionContext<'_> {
     pub async fn followup_with_channel_select_menu(
         &self,
-        token: &str,
         content: String,
-        ephemeral: bool,
+        visibility: DeferVisibility,
         menu: ChannelSelectMenu,
     ) -> Result<Response<Message>> {
         let response = InteractionResponse {
             content,
-            flags: ephemeral.then_some(MessageFlags::EPHEMERAL),
+            flags: (visibility == DeferVisibility::Ephemeral).then_some(MessageFlags::EPHEMERAL),
             components: vec![ActionRow {
                 kind: ComponentType::ActionRow.into(),
                 components: vec![menu],
@@ -60,9 +60,10 @@ impl Context {
         };
 
         Ok(self
+            .ctx
             .bot
             .interaction_client()
-            .create_followup(token)
+            .create_followup(&self.interaction.token)
             .payload_json(&serde_json::to_vec(&response)?)
             .await?)
     }

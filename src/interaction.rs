@@ -11,6 +11,7 @@ use crate::{err_reply, Context, CustomError, Error, TEST_GUILD_ID};
 mod channel_select_menu;
 mod move_channel_select;
 mod move_message;
+mod message_command;
 
 struct InteractionContext<'ctx> {
     ctx: &'ctx Context,

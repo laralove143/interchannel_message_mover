@@ -30,7 +30,10 @@ mod message;
 const TEST_GUILD_ID: Id<GuildMarker> = Id::new(903_367_565_349_384_202);
 const LOGGING_CHANNEL_ID: Id<ChannelMarker> = Id::new(1_002_953_459_890_397_287);
 
-const REQUIRED_PERMISSIONS: Permissions = Permissions::empty();
+const REQUIRED_PERMISSIONS: Permissions = Permissions::MANAGE_WEBHOOKS
+    .union(Permissions::VIEW_CHANNEL)
+    .union(Permissions::READ_MESSAGE_HISTORY)
+    .union(Permissions::MANAGE_MESSAGES);
 
 #[derive(Clone, Debug, Eq, PartialEq, thiserror::Error)]
 pub enum Error {
@@ -120,5 +123,5 @@ fn err_reply(err: &anyhow::Error) -> Reply {
             .to_owned()
     };
 
-    Reply::new().ephemeral().content(message)
+    Reply::new().ephemeral().update_last().content(message)
 }

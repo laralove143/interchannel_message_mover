@@ -1,15 +1,9 @@
 use anyhow::Result;
-use sparkle_convenience::{
-    error::IntoError, interaction::extract::InteractionDataExt, reply::Reply,
-};
-use twilight_model::{
-    application::command::{Command, CommandType},
-    channel::Message,
-    guild::Permissions,
-};
+use sparkle_convenience::reply::Reply;
+use twilight_model::application::command::{Command, CommandType};
 use twilight_util::builder::command::CommandBuilder;
 
-use crate::{err_reply, interaction::InteractionContext, CustomError, REQUIRED_PERMISSIONS};
+use crate::interaction::InteractionContext;
 
 pub const NAME: &str = "move message";
 
@@ -21,52 +15,35 @@ pub fn command() -> Command {
 
 impl InteractionContext<'_> {
     pub async fn handle_move_message_command(self) -> Result<()> {
-        self.handle.check_permissions(REQUIRED_PERMISSIONS)?;
+        let message = self.handle_message_command()?;
+        let message_id = message.id;
+        let message_channel_id = message.channel_id;
 
-        let message = self
-            .interaction
-            .data
-            .clone()
-            .ok()?
-            .command()
-            .ok()?
-            .resolved
-            .ok()?
-            .messages
-            .into_iter()
-            .next()
-            .ok()?
-            .1;
-        let member = self.interaction.member.as_ref().ok()?;
-        let user = member.user.as_ref().ok()?;
+        let channel = self.wait_for_channel_select_interaction().await?;
 
-        if message.author.id != user.id
-            && !member
-                .permissions
-                .ok()?
-                .contains(Permissions::MANAGE_MESSAGES)
-        {
-            return Err(CustomError::ManageMessagesPermissionsMissing.into());
-        }
-
-        let ctx = self.wait_for_channel_select_interaction().await?;
-        let handle = ctx.handle.clone();
-        if let Err(err) = ctx.handle_move_message_channel_select(message).await {
-            handle
-                .handle_error::<CustomError>(err_reply(&err), err)
-                .await;
-        }
-
-        Ok(())
-    }
-
-    async fn handle_move_message_channel_select(self, message: Message) -> Result<()> {
-        let channel = self.handle_channel_select().await?;
-
-        self.handle.defer_update_message().await?;
-        self.ctx.execute_webhook_as_member(message, channel).await?;
         self.handle
-            .update_message(Reply::new().ephemeral().content("done!".to_owned()))
+            .reply(
+                Reply::new()
+                    .ephemeral()
+                    .update_last()
+                    .content("starting up the bike :motor_scooter:"),
+            )
+            .await?;
+
+        self.ctx.execute_webhook_as_member(message, channel).await?;
+        self.ctx
+            .bot
+            .http
+            .delete_message(message_channel_id, message_id)
+            .await?;
+
+        self.handle
+            .reply(
+                Reply::new()
+                    .ephemeral()
+                    .update_last()
+                    .content("done :incoming_envelope:"),
+            )
             .await?;
 
         Ok(())
