@@ -9,9 +9,10 @@ use twilight_model::application::interaction::Interaction;
 use crate::{err_reply, Context, CustomError, Error, TEST_GUILD_ID};
 
 mod channel_select_menu;
+mod message_command;
 mod move_channel_select;
 mod move_message;
-mod message_command;
+mod move_message_and_below;
 
 struct InteractionContext<'ctx> {
     ctx: &'ctx Context,
@@ -23,6 +24,7 @@ impl<'ctx> InteractionContext<'ctx> {
     async fn handle(self) -> Result<()> {
         match self.interaction.name().ok()? {
             move_message::NAME => self.handle_move_message_command().await,
+            move_message_and_below::NAME => self.handle_move_message_and_below_command().await,
             move_channel_select::CUSTOM_ID => Ok(()),
             name => Err(Error::UnknownCommand(name.to_owned()).into()),
         }
@@ -30,7 +32,7 @@ impl<'ctx> InteractionContext<'ctx> {
 }
 
 pub async fn set_commands(bot: &Bot) -> Result<()> {
-    let commands = &[move_message::command()];
+    let commands = &[move_message::command(), move_message_and_below::command()];
 
     bot.interaction_client()
         .set_global_commands(commands)

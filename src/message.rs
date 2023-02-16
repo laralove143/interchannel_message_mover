@@ -7,8 +7,8 @@ use crate::{Context, CustomError};
 impl Context {
     pub async fn execute_webhook_as_member(
         &self,
-        message: Message,
-        channel: Channel,
+        message: &Message,
+        channel: &Channel,
     ) -> Result<()> {
         let mut channel_id = channel.id;
         let mut thread_id = None;

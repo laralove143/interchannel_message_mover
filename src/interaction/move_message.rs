@@ -30,7 +30,9 @@ impl InteractionContext<'_> {
             )
             .await?;
 
-        self.ctx.execute_webhook_as_member(message, channel).await?;
+        self.ctx
+            .execute_webhook_as_member(&message, &channel)
+            .await?;
         self.ctx
             .bot
             .http

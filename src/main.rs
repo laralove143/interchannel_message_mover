@@ -51,6 +51,16 @@ pub enum CustomError {
     SendMessagesPermissionMissing,
     #[error("that message is too long, you're probably using your super nitro powers")]
     MessageTooLong,
+    #[error(
+        "i can work with up to 50 messages, if you need a higher limit, please join the support \
+         server and tell lara"
+    )]
+    TooManyMessages,
+    #[error(
+        "i can't work with messages older than 2 weeks, if you need me to, please join the \
+         support server and tell lara"
+    )]
+    MessageTooOld,
 }
 
 struct Context {
