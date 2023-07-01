@@ -5,7 +5,7 @@ use sparkle_convenience::{error::IntoError, reply::Reply};
 use twilight_model::application::command::{Command, CommandType};
 use twilight_util::builder::command::CommandBuilder;
 
-use crate::interaction::InteractionContext;
+use crate::{interaction::InteractionContext, message};
 
 pub const NAME: &str = "move this message and below";
 
@@ -34,6 +34,10 @@ impl InteractionContext<'_> {
             .await?;
         channel_messages.reverse();
         messages.append(&mut channel_messages);
+
+        for message in &messages {
+            message::check(message)?;
+        }
 
         let reply_content = match messages.len() {
             0..=10 => "starting up the car :red_car:",

@@ -49,8 +49,13 @@ pub enum CustomError {
         "you need **Send Messages** permissions in the channel you want to move the messages to"
     )]
     SendMessagesPermissionMissing,
-    #[error("that message is too long, you're probably using your super nitro powers")]
+    #[error("one of the messages is too long, you're probably using your super nitro powers")]
     MessageTooLong,
+    #[error(
+        "one of the messages has an image/file, this will be handled better in the future, sorry \
+         for the inconvenience and stay tuned!"
+    )]
+    MessageAttachment,
     #[error(
         "i can work with up to 50 messages, if you need a higher limit, please join the support \
          server and tell lara"
