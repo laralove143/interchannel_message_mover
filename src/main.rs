@@ -11,7 +11,9 @@ use sparkle_convenience::{
     reply::Reply,
     Bot,
 };
-use twilight_gateway::{stream::ShardEventStream, EventTypeFlags, Intents};
+use twilight_gateway::{
+    error::ReceiveMessageErrorType, stream::ShardEventStream, EventTypeFlags, Intents,
+};
 use twilight_model::{
     gateway::event::Event,
     guild::Permissions,
