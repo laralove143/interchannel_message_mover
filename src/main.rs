@@ -111,13 +111,19 @@ async fn main() -> Result<()> {
                     ctx_ref.handle_event(event).await;
                 });
             }
-            Err(err) => {
+            Err(err)
+                if !matches!(
+                    err.kind(),
+                    ReceiveMessageErrorType::Deserializing { .. } | ReceiveMessageErrorType::Io
+                ) =>
+            {
                 ctx_ref.bot.log(&err).await;
 
                 if err.is_fatal() {
                     break;
                 }
             }
+            Err(_) => (),
         }
     }
 
