@@ -8,6 +8,10 @@ every message to the right channel and delete the messages and all.. even more u
 
 with me you can do all that with just one command
 
+## usage
+
+just right click in a message __(hold on it on mobile)__, select __apps__ then any command you want
+
 ## terms of service
 
 - *"i" refers to Lara Kayaalp, the developer of interchannel message mover*
