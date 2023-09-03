@@ -1,5 +1,5 @@
 [package]
-name = "discord-interchannel-message-mover"
+name = "interchannel_message_mover"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
