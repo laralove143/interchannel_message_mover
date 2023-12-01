@@ -33,7 +33,9 @@ impl<'a> InteractionContext<'a> {
                     vec![
                         ChannelType::GuildText,
                         ChannelType::GuildAnnouncement,
+                        ChannelType::AnnouncementThread,
                         ChannelType::PublicThread,
+                        ChannelType::PrivateThread,
                     ],
                 ),
             )
