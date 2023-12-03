@@ -36,8 +36,6 @@ impl<'a> InteractionContext<'a> {
                         ChannelType::AnnouncementThread,
                         ChannelType::PublicThread,
                         ChannelType::PrivateThread,
-                        ChannelType::GuildVoice,
-                        ChannelType::GuildStageVoice,
                     ],
                 ),
             )
