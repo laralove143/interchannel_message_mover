@@ -1,6 +1,7 @@
 use anyhow::Result;
 use sparkle_convenience::error::IntoError;
 use twilight_model::channel::{Channel, Message};
+use twilight_model::http::attachment;
 
 use crate::{Context, CustomError};
 
@@ -9,6 +10,7 @@ impl Context {
         &self,
         message: &Message,
         channel: &Channel,
+        attachments: &[attachment::Attachment],
     ) -> Result<()> {
         let mut channel_id = channel.id;
         let mut thread_id = None;
@@ -43,6 +45,7 @@ impl Context {
             .bot
             .http
             .execute_webhook(webhook.id, &webhook_token)
+            .attachments(attachments).expect("attachments")
             .content(&message.content)
             .map_err(|_| CustomError::MessageTooLong)?
             .username(
