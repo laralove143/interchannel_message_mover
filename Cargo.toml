@@ -5,16 +5,18 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-sparkle-convenience = "0.15"
-twilight-gateway = "0.15"
-twilight-http = "0.15"
-twilight-model = "0.15"
-twilight-standby = "0.15"
-twilight-util = { version = "0.15", features = ["builder", "permission-calculator"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.25", features = ["rt-multi-thread", "macros"] }
-futures = "0.3"
-anyhow = { version = "1.0", features = ["backtrace"] }
-thiserror = "1.0"
-dotenvy = "0.15"
+sparkle-convenience = "0.15.8"
+twilight-gateway = "0.15.4"
+twilight-http = "0.15.4"
+twilight-model = "0.15.4"
+twilight-standby = "0.15.4"
+twilight-util = { version = "0.15.4", features = ["builder", "permission-calculator"] }
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
+tokio = { version = "1.35.0", features = ["full"] }
+futures = "0.3.29"
+anyhow = { version = "1.0.75", features = ["backtrace"] }
+thiserror = "1.0.50"
+dotenvy = "0.15.7"
+
+reqwest = { version = "0.11.22", features = ["blocking", "json"] }
