@@ -90,9 +90,9 @@ impl Context {
 }
 
 pub fn check(message: &Message) -> Result<()> {
-    if !message.attachments.is_empty() {
-        return Err(CustomError::MessageAttachment.into());
-    }
+    // if !message.attachments.is_empty() {
+    //     return Err(CustomError::MessageAttachment.into());
+    // }
 
     Ok(())
 }
